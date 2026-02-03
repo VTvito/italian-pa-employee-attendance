@@ -203,13 +203,19 @@ export class ModalManager {
             typeSelect.value = type;
             
             // Imposta orario default basato sul tipo
+            const now = new Date();
+            const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            
             if (type === 'entrata') {
-                timeInput.value = '08:00';
+                timeInput.value = currentTime; // Usa ora corrente invece di 08:00
             } else if (type === 'uscita') {
-                timeInput.value = '17:00';
+                timeInput.value = currentTime;
             } else {
                 timeInput.value = '';
             }
+            
+            // Salva il valore corrente per Android picker issue
+            this._lastTimeValue = timeInput.value;
 
             // Mostra/nascondi campo orario in base al tipo
             this.updateTimeFieldVisibility(typeSelect.value, timeGroup, timeInput);
@@ -220,16 +226,26 @@ export class ModalManager {
                 this.updateTimeFieldVisibility(newType, timeGroup, timeInput);
                 
                 // Aggiorna orario default quando cambia tipo
-                if (newType === 'entrata' && !timeInput.value) {
-                    timeInput.value = '08:00';
-                } else if (newType === 'uscita' && !timeInput.value) {
-                    timeInput.value = '17:00';
+                if ((newType === 'entrata' || newType === 'uscita') && !timeInput.value) {
+                    timeInput.value = currentTime;
+                    this._lastTimeValue = currentTime;
                 }
             };
             typeSelect.addEventListener('change', typeChangeHandler);
+            
+            // Listener per catturare cambio orario (fix per Android picker)
+            const timeChangeHandler = (e) => {
+                if (e.target.value) {
+                    this._lastTimeValue = e.target.value;
+                }
+            };
+            timeInput.addEventListener('change', timeChangeHandler);
+            timeInput.addEventListener('input', timeChangeHandler);
+            timeInput.addEventListener('blur', timeChangeHandler);
 
             // Salva riferimento per cleanup
             this._addTypeHandler = typeChangeHandler;
+            this._addTimeHandler = timeChangeHandler;
         });
     }
 
@@ -347,7 +363,8 @@ export class ModalManager {
 
         // Validazione
         const type = typeSelect.value;
-        const time = timeInput.value;
+        // Usa il valore salvato dal listener se il valore corrente è vuoto (fix Android picker)
+        let time = timeInput.value || this._lastTimeValue || '';
         const date = dateInput.value;
 
         if (!date) {
@@ -368,6 +385,13 @@ export class ModalManager {
             typeSelect.removeEventListener('change', this._addTypeHandler);
             this._addTypeHandler = null;
         }
+        if (this._addTimeHandler) {
+            timeInput.removeEventListener('change', this._addTimeHandler);
+            timeInput.removeEventListener('input', this._addTimeHandler);
+            timeInput.removeEventListener('blur', this._addTimeHandler);
+            this._addTimeHandler = null;
+        }
+        this._lastTimeValue = null;
 
         this.close({
             action: 'add',

@@ -62,11 +62,33 @@ async function registerServiceWorker() {
             if (registration.waiting) {
                 showUpdateNotification();
             }
+            
+            // Forza controllo aggiornamenti all'avvio e periodicamente
+            checkForUpdates(registration);
+            
+            // Controlla aggiornamenti quando l'app torna in primo piano
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    checkForUpdates(registration);
+                }
+            });
 
         } catch (error) {
             console.warn('Service Worker non registrato:', error.message);
             // Non bloccare l'app se il SW fallisce
         }
+    }
+}
+
+/**
+ * Forza controllo aggiornamenti del service worker
+ */
+async function checkForUpdates(registration) {
+    try {
+        console.log('[App] Controllo aggiornamenti...');
+        await registration.update();
+    } catch (error) {
+        console.log('[App] Controllo aggiornamenti fallito (offline?):', error.message);
     }
 }
 

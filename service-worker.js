@@ -5,7 +5,7 @@
  * e aggiornamenti dell'applicazione.
  */
 
-const CACHE_NAME = 'orari-lavoro-v4';
+const CACHE_NAME = 'orari-lavoro-v5';
 
 // Determina il base path per GitHub Pages o localhost
 const BASE_PATH = self.location.pathname.replace('service-worker.js', '');

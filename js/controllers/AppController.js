@@ -14,7 +14,7 @@ import { WeekNavigator, weekNavigator } from '../services/WeekNavigator.js';
 import { timeCalculator, CONFIG } from '../services/TimeCalculator.js';
 import { exportService } from '../services/ExportService.js';
 import { eventBus, EVENTS } from '../utils/EventBus.js';
-import { formatDateISO, isFriday, parseDateISO, getCurrentWeek } from '../utils/DateUtils.js';
+import { formatDateISO, isFriday, parseDateISO, getCurrentWeek, getWeekKey, getWeekYear, getWeekNumber } from '../utils/DateUtils.js';
 
 /**
  * Controller principale
@@ -63,6 +63,7 @@ export class AppController {
                 onPrevWeek: () => this.handlePrevWeek(),
                 onNextWeek: () => this.handleNextWeek(),
                 onEditEntry: (date, index, entry) => this.handleEditEntry(date, index, entry),
+                onAddEntry: (dateKey) => this.handleAddEntry(dateKey),
                 onExportJSON: () => this.handleExportJSON(),
                 onExportExcel: () => this.handleExportExcel(),
                 onImport: (file) => this.handleImport(file),
@@ -407,6 +408,95 @@ export class AppController {
             await this.saveCurrentWeek();
             this.ui.showToast('Registrazione aggiornata', 'success');
         }
+    }
+
+    /**
+     * Gestisce aggiunta nuova entry
+     * @param {string} [dateKey] - Data preselezionata (opzionale)
+     */
+    async handleAddEntry(dateKey = null) {
+        const result = await modalManager.openAddEntryModal({
+            date: dateKey,
+            type: 'entrata'
+        });
+
+        if (!result || result.action !== 'add') return;
+
+        // Verifica se la data è nel weekend
+        const selectedDate = new Date(result.date);
+        const dayOfWeek = selectedDate.getDay();
+        
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            this.ui.showToast('Non puoi registrare nel weekend', 'warning');
+            return;
+        }
+
+        // Determina la settimana della data selezionata
+        const selectedWeekKey = getWeekKey(
+            getWeekYear(selectedDate),
+            getWeekNumber(selectedDate)
+        );
+        const viewWeekKey = this.navigator.getViewWeekKey();
+
+        // Se la data è in una settimana diversa, naviga a quella settimana
+        if (selectedWeekKey !== viewWeekKey) {
+            this.navigator.goToWeekKey(selectedWeekKey);
+            await this.loadWeekData(selectedWeekKey);
+        }
+
+        // Crea l'entry appropriata
+        let entry;
+        if (result.type === 'smart') {
+            entry = TimeEntry.createSmart(result.date);
+        } else if (result.type === 'assente') {
+            entry = TimeEntry.createAssente();
+        } else {
+            entry = new TimeEntry(result.type, result.time);
+        }
+
+        // Se è un tipo speciale, verifica e pulisci il giorno
+        if (result.type === 'smart' || result.type === 'assente') {
+            if (this.currentWeekData.hasEntries(result.date)) {
+                const confirm = await modalManager.openConfirmModal(
+                    'Il giorno ha già delle registrazioni. Vuoi sostituirle?',
+                    'Conferma sostituzione'
+                );
+                if (!confirm) return;
+                this.currentWeekData.clearDay(result.date);
+            }
+        }
+
+        // Aggiungi entry
+        this.currentWeekData.addEntry(result.date, entry);
+        await this.saveCurrentWeek();
+        
+        const typeLabel = this.getTypeLabel(result.type);
+        this.ui.showToast(`${typeLabel} aggiunta per il ${this.formatDateShort(result.date)}`, 'success');
+    }
+
+    /**
+     * Formatta data in formato breve
+     * @param {string} dateKey - Data ISO
+     * @returns {string}
+     */
+    formatDateShort(dateKey) {
+        const date = new Date(dateKey);
+        return date.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
+    }
+
+    /**
+     * Ottiene label per tipo entry
+     * @param {string} type - Tipo entry
+     * @returns {string}
+     */
+    getTypeLabel(type) {
+        const labels = {
+            entrata: '🟢 Entrata',
+            uscita: '🔴 Uscita',
+            smart: '🏠 Smart Working',
+            assente: '❌ Assenza'
+        };
+        return labels[type] || type;
     }
 
     /**

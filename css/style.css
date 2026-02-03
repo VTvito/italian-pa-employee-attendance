@@ -316,7 +316,36 @@ body {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+/* Add Entry Section */
+.add-entry-section {
     margin-bottom: var(--spacing-lg);
+}
+
+.btn-add-entry {
+    width: 100%;
+    padding: var(--spacing-md);
+    background: linear-gradient(135deg, var(--color-bg-card) 0%, var(--color-bg) 100%);
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    color: var(--color-text);
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-add-entry:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, var(--color-bg-card) 100%);
+}
+
+.btn-add-entry:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
 }
 
 /* ============================================
@@ -383,6 +412,59 @@ body {
     text-align: center;
     color: var(--color-text-muted);
     font-style: italic;
+}
+
+/* Giorno vuoto cliccabile */
+.day-entries.empty.clickable {
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    margin: var(--spacing-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.day-entries.empty.clickable:hover {
+    border-color: var(--color-primary);
+    background-color: rgba(37, 99, 235, 0.05);
+}
+
+.day-entries.empty.clickable:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.day-entries .empty-text {
+    color: var(--color-text-muted);
+}
+
+.day-entries .add-hint {
+    color: var(--color-primary);
+    font-style: normal;
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+}
+
+/* Bottone "Aggiungi" dentro la lista entry */
+.btn-add-more {
+    display: block;
+    width: 100%;
+    padding: var(--spacing-sm);
+    margin-top: var(--spacing-xs);
+    background: none;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-primary);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-add-more:hover {
+    background-color: rgba(37, 99, 235, 0.05);
+    border-color: var(--color-primary);
 }
 
 /* Entry Item */

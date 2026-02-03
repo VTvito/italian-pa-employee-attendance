@@ -97,6 +97,13 @@
                 ❌ Assente
             </button>
         </section>
+        
+        <!-- Add Entry Button (for past/future days) -->
+        <section class="add-entry-section">
+            <button id="addEntryBtn" class="btn btn-add-entry">
+                ➕ Aggiungi registrazione su altro giorno
+            </button>
+        </section>
 
         <!-- Week Days List -->
         <main class="week-days" id="weekDays">
@@ -151,6 +158,41 @@
         </footer>
     </div>
 
+    <!-- Modal Add Entry (Nuova registrazione) -->
+    <div id="addEntryModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="addEntryModalTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="addEntryModalTitle">➕ Nuova Registrazione</h2>
+                <button class="modal-close" data-action="close" aria-label="Chiudi">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addEntryForm">
+                    <div class="form-group">
+                        <label for="addDate">Data</label>
+                        <input type="date" id="addDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="addType">Tipo</label>
+                        <select id="addType" required>
+                            <option value="entrata">🟢 Entrata</option>
+                            <option value="uscita">🔴 Uscita</option>
+                            <option value="smart">🏠 Smart Working</option>
+                            <option value="assente">❌ Assente</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="addTimeGroup">
+                        <label for="addTime">Orario</label>
+                        <input type="time" id="addTime" value="08:00" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-action="close">Annulla</button>
+                <button class="btn btn-primary" data-action="add">➕ Aggiungi</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Edit Entry -->
     <div id="editModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
         <div class="modal-content">
@@ -167,10 +209,10 @@
                     <div class="form-group">
                         <label for="editType">Tipo</label>
                         <select id="editType" required>
-                            <option value="entrata">Entrata</option>
-                            <option value="uscita">Uscita</option>
-                            <option value="smart">Smart Working</option>
-                            <option value="assente">Assente</option>
+                            <option value="entrata">🟢 Entrata</option>
+                            <option value="uscita">🔴 Uscita</option>
+                            <option value="smart">🏠 Smart Working</option>
+                            <option value="assente">❌ Assente</option>
                         </select>
                     </div>
                     <div class="form-group" id="timeGroup">

@@ -31,6 +31,7 @@ export class ModalManager {
     init() {
         // Registra tutte le modali
         this.registerModal('edit', document.getElementById('editModal'));
+        this.registerModal('addEntry', document.getElementById('addEntryModal'));
         this.registerModal('confirm', document.getElementById('confirmModal'));
         this.registerModal('backupReminder', document.getElementById('backupReminderModal'));
         this.registerModal('cleanData', document.getElementById('cleanDataModal'));
@@ -99,6 +100,9 @@ export class ModalManager {
             case 'save':
                 this.handleSave();
                 break;
+            case 'add':
+                this.handleAdd();
+                break;
             case 'delete':
                 this.handleDelete();
                 break;
@@ -166,6 +170,67 @@ export class ModalManager {
         }
 
         eventBus.emit(EVENTS.MODAL_CLOSE, { name, result });
+    }
+
+    /**
+     * Apre la modale per aggiungere nuova entry
+     * @param {Object} options - Opzioni
+     * @param {string} [options.date] - Data preselezionata (ISO format)
+     * @param {string} [options.type] - Tipo preselezionato
+     * @returns {Promise<Object|null>}
+     */
+    openAddEntryModal({ date = null, type = 'entrata' } = {}) {
+        return new Promise((resolve) => {
+            this.currentResolver = resolve;
+            
+            const modal = this.open('addEntry');
+            if (!modal) {
+                resolve(null);
+                return;
+            }
+
+            // Riferimenti elementi
+            const dateInput = modal.querySelector('#addDate');
+            const typeSelect = modal.querySelector('#addType');
+            const timeInput = modal.querySelector('#addTime');
+            const timeGroup = modal.querySelector('#addTimeGroup');
+
+            // Imposta data (default: oggi)
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = date || today;
+            
+            // Imposta tipo
+            typeSelect.value = type;
+            
+            // Imposta orario default basato sul tipo
+            if (type === 'entrata') {
+                timeInput.value = '08:00';
+            } else if (type === 'uscita') {
+                timeInput.value = '17:00';
+            } else {
+                timeInput.value = '';
+            }
+
+            // Mostra/nascondi campo orario in base al tipo
+            this.updateTimeFieldVisibility(typeSelect.value, timeGroup, timeInput);
+
+            // Listener per cambio tipo
+            const typeChangeHandler = () => {
+                const newType = typeSelect.value;
+                this.updateTimeFieldVisibility(newType, timeGroup, timeInput);
+                
+                // Aggiorna orario default quando cambia tipo
+                if (newType === 'entrata' && !timeInput.value) {
+                    timeInput.value = '08:00';
+                } else if (newType === 'uscita' && !timeInput.value) {
+                    timeInput.value = '17:00';
+                }
+            };
+            typeSelect.addEventListener('change', typeChangeHandler);
+
+            // Salva riferimento per cleanup
+            this._addTypeHandler = typeChangeHandler;
+        });
     }
 
     /**
@@ -264,6 +329,49 @@ export class ModalManager {
             action: 'save',
             date: dateInput.value,
             index: parseInt(indexInput.value, 10),
+            type: type,
+            time: requiresTime(type) ? time : null
+        });
+    }
+
+    /**
+     * Gestisce l'aggiunta dalla modale addEntry
+     */
+    handleAdd() {
+        const modal = this.modals.get('addEntry');
+        if (!modal) return;
+
+        const dateInput = modal.querySelector('#addDate');
+        const typeSelect = modal.querySelector('#addType');
+        const timeInput = modal.querySelector('#addTime');
+
+        // Validazione
+        const type = typeSelect.value;
+        const time = timeInput.value;
+        const date = dateInput.value;
+
+        if (!date) {
+            this.showFieldError(dateInput, 'Seleziona una data');
+            return;
+        }
+
+        if (requiresTime(type)) {
+            const validation = validateTime(time);
+            if (!validation.valid) {
+                this.showFieldError(timeInput, validation.error);
+                return;
+            }
+        }
+
+        // Cleanup listener
+        if (this._addTypeHandler) {
+            typeSelect.removeEventListener('change', this._addTypeHandler);
+            this._addTypeHandler = null;
+        }
+
+        this.close({
+            action: 'add',
+            date: date,
             type: type,
             time: requiresTime(type) ? time : null
         });

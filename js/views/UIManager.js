@@ -23,6 +23,7 @@ export class UIManager {
      * @param {Function} options.onPrevWeek - Callback per navigazione indietro
      * @param {Function} options.onNextWeek - Callback per navigazione avanti
      * @param {Function} options.onEditEntry - Callback per modifica entry
+     * @param {Function} options.onAddEntry - Callback per aggiunta entry su giorno specifico
      * @param {Function} options.onExportJSON - Callback per export JSON
      * @param {Function} options.onExportExcel - Callback per export Excel
      * @param {Function} options.onImport - Callback per import
@@ -48,6 +49,7 @@ export class UIManager {
             uscitaBtn: document.getElementById('uscitaBtn'),
             smartBtn: document.getElementById('smartBtn'),
             assenteBtn: document.getElementById('assenteBtn'),
+            addEntryBtn: document.getElementById('addEntryBtn'),
             prevWeekBtn: document.getElementById('prevWeekBtn'),
             nextWeekBtn: document.getElementById('nextWeekBtn'),
             exportJsonBtn: document.getElementById('exportJsonBtn'),
@@ -90,6 +92,11 @@ export class UIManager {
 
         elements.assenteBtn?.addEventListener('click', () => {
             callbacks.onAssente?.();
+        });
+
+        // Add Entry button (per aggiungere su altri giorni)
+        elements.addEntryBtn?.addEventListener('click', () => {
+            callbacks.onAddEntry?.();
         });
 
         // Navigation
@@ -425,13 +432,44 @@ export class UIManager {
         entriesContainer.className = 'day-entries';
 
         if (entries.length === 0) {
-            entriesContainer.classList.add('empty');
-            entriesContainer.textContent = 'Nessuna registrazione';
+            entriesContainer.classList.add('empty', 'clickable');
+            entriesContainer.innerHTML = `
+                <span class="empty-text">Nessuna registrazione</span>
+                <span class="add-hint">+ Tocca per aggiungere</span>
+            `;
+            
+            // Click handler per giorno vuoto
+            const handleEmptyClick = () => {
+                this.callbacks.onAddEntry?.(day.dateKey);
+            };
+            
+            entriesContainer.addEventListener('click', handleEmptyClick);
+            entriesContainer.setAttribute('role', 'button');
+            entriesContainer.setAttribute('tabindex', '0');
+            entriesContainer.setAttribute('aria-label', `Aggiungi registrazione per ${this.getDayName(day.dayOfWeek)}`);
+            
+            entriesContainer.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleEmptyClick();
+                }
+            });
         } else {
             entries.forEach((entry, index) => {
                 const entryEl = this.createEntryItem(entry, day.dateKey, index);
                 entriesContainer.appendChild(entryEl);
             });
+            
+            // Aggiungi bottone "+" per aggiungere altre entry al giorno
+            const addMoreBtn = document.createElement('button');
+            addMoreBtn.className = 'btn-add-more';
+            addMoreBtn.innerHTML = '+ Aggiungi';
+            addMoreBtn.setAttribute('aria-label', 'Aggiungi altra registrazione');
+            addMoreBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.callbacks.onAddEntry?.(day.dateKey);
+            });
+            entriesContainer.appendChild(addMoreBtn);
         }
 
         card.appendChild(entriesContainer);

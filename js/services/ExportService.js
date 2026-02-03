@@ -37,7 +37,13 @@ export class ExportService {
      */
     exportCSV(weekKey, weekData) {
         const csv = this.generateCSV(weekKey, weekData);
-        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }); // BOM per Excel
+        // UTF-8 BOM + encoding corretto per Excel
+        const BOM = '\uFEFF';
+        const csvContent = BOM + csv;
+        // Usa Uint8Array con TextEncoder per encoding UTF-8 corretto
+        const encoder = new TextEncoder();
+        const csvBytes = encoder.encode(csvContent);
+        const blob = new Blob([csvBytes], { type: 'text/csv;charset=utf-8' });
         
         const fileName = this.generateFilename('csv', weekKey);
         this.downloadBlob(blob, fileName);

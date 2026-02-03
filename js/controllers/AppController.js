@@ -84,6 +84,9 @@ export class AppController {
 
             // Controlla dati vecchi
             await this.checkOldData();
+            
+            // Setup listener per aggiornamento settimana quando l'app torna in focus
+            this.setupVisibilityListener();
 
             this.isInitialized = true;
             eventBus.emit(EVENTS.APP_INITIALIZED);
@@ -93,6 +96,26 @@ export class AppController {
             console.error('AppController: Errore inizializzazione:', error);
             eventBus.emit(EVENTS.APP_ERROR, { message: 'Errore inizializzazione', error });
         }
+    }
+    
+    /**
+     * Setup listener per quando l'app torna visibile (es. da background)
+     * Utile per aggiornare la settimana corrente se è passata la mezzanotte
+     */
+    setupVisibilityListener() {
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible' && this.isInitialized) {
+                // Aggiorna la settimana corrente
+                const weekChanged = this.navigator.refreshCurrentWeek();
+                
+                if (weekChanged) {
+                    // Se siamo in una nuova settimana, naviga automaticamente ad essa
+                    console.log('AppController: Nuova settimana rilevata, aggiornamento vista...');
+                    await this.loadCurrentWeek();
+                    this.ui.showToast('📅 Nuova settimana iniziata!', 'info');
+                }
+            }
+        });
     }
 
     /**
@@ -447,7 +470,7 @@ export class AppController {
         // Crea l'entry appropriata
         let entry;
         if (result.type === 'smart') {
-            entry = TimeEntry.createSmart(result.date);
+            entry = TimeEntry.createSmart(isFriday(selectedDate));
         } else if (result.type === 'assente') {
             entry = TimeEntry.createAssente();
         } else {
@@ -563,18 +586,28 @@ export class AppController {
     }
 
     /**
-     * Gestisce backup manuale
+     * Gestisce backup manuale - esporta file JSON come backup reale
      */
     async handleBackup() {
         try {
-            const success = await this.storage.createBackup();
+            // Esporta come file JSON (vero backup scaricabile)
+            const data = await this.storage.loadAllData();
             
-            if (success) {
-                await this.updateBackupStatus();
-                this.ui.showToast('Backup completato', 'success');
-            } else {
-                this.ui.showToast('Backup non disponibile (IndexedDB non attivo)', 'warning');
+            if (Object.keys(data).length === 0) {
+                this.ui.showToast('Nessun dato da salvare nel backup', 'warning');
+                return;
             }
+            
+            // Crea file di backup con timestamp
+            const timestamp = new Date().toISOString().slice(0, 10);
+            const filename = `backup-orari-lavoro-${timestamp}.json`;
+            exportService.exportJSON(data, filename);
+            
+            // Aggiorna anche backup interno
+            await this.storage.createBackup();
+            await this.updateBackupStatus();
+            
+            this.ui.showToast('📥 Backup scaricato! Conserva il file in un posto sicuro.', 'success');
         } catch (error) {
             console.error('Errore backup:', error);
             this.ui.showToast('Errore durante il backup', 'error');

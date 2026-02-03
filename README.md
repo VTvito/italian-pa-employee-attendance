@@ -196,6 +196,18 @@ EXPOSE 80
 
 ---
 
+## 🔮 Roadmap & Feature Future
+
+### In Valutazione
+- **🚀 Shortcut Rapide da Homescreen**: Due icone separate per "Entrata" e "Uscita" che permettano di timbrare senza aprire l'app
+- **📊 Statistiche Mensili**: Visualizzazione grafica del monte ore mensile
+- **🔔 Notifiche Push**: Promemoria per timbratura mancante
+- **☁️ Sync Cloud Opzionale**: Sincronizzazione volontaria tra dispositivi
+
+Vuoi una feature? [Apri una Issue](https://github.com/VTvito/italian-pa-employee-attendance/issues)!
+
+---
+
 ## 🤝 Contribuisci
 
 Le Pull Request sono benvenute! Per modifiche importanti, apri prima una Issue.

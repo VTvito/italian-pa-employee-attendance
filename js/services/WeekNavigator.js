@@ -31,6 +31,7 @@ export class WeekNavigator {
 
     /**
      * Resetta alla settimana corrente
+     * Aggiorna anche currentYear/currentWeek alla data odierna
      */
     reset() {
         const today = new Date();
@@ -38,6 +39,31 @@ export class WeekNavigator {
         this.currentWeek = getWeekNumber(today);
         this.viewYear = this.currentYear;
         this.viewWeek = this.currentWeek;
+    }
+
+    /**
+     * Aggiorna la settimana corrente basandosi sulla data odierna.
+     * Chiamare questo metodo quando l'app viene riaperta per assicurarsi
+     * che la settimana corrente sia aggiornata.
+     * @returns {boolean} true se la settimana corrente è cambiata
+     */
+    refreshCurrentWeek() {
+        const today = new Date();
+        const newYear = getWeekYear(today);
+        const newWeek = getWeekNumber(today);
+        
+        const changed = (this.currentYear !== newYear || this.currentWeek !== newWeek);
+        
+        if (changed) {
+            console.log(`WeekNavigator: Settimana aggiornata da ${this.currentYear}-W${this.currentWeek} a ${newYear}-W${newWeek}`);
+            this.currentYear = newYear;
+            this.currentWeek = newWeek;
+            
+            // Se stava visualizzando la settimana "corrente" precedente, aggiorna anche la vista
+            // Altrimenti mantieni la settimana che l'utente stava visualizzando
+        }
+        
+        return changed;
     }
 
     /**

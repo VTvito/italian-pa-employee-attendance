@@ -141,10 +141,15 @@ export class UIManager {
         const installBanner = document.getElementById('installBanner');
         const installBannerBtn = document.getElementById('installBannerBtn');
         const installBannerClose = document.getElementById('installBannerClose');
+        const installBannerHint = document.getElementById('installBannerHint');
+        const showInstallHelp = document.getElementById('showInstallHelp');
+        const iosInstallModal = document.getElementById('iosInstallModal');
+        const iosModalClose = document.getElementById('iosModalClose');
+        const iosModalOk = document.getElementById('iosModalOk');
         
         // Chiave localStorage per tracciare dismissioni
         const INSTALL_DISMISSED_KEY = 'pwa_install_dismissed';
-        const INSTALL_DISMISSED_EXPIRES = 7 * 24 * 60 * 60 * 1000; // 7 giorni
+        const INSTALL_DISMISSED_EXPIRES = 24 * 60 * 60 * 1000; // 24 ore (ridotto da 7 giorni)
 
         /**
          * Controlla se l'utente ha già chiuso il banner di recente
@@ -162,6 +167,13 @@ export class UIManager {
         const isIOS = () => {
             return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         };
+        
+        /**
+         * Controlla se è Android
+         */
+        const isAndroid = () => {
+            return /Android/.test(navigator.userAgent);
+        };
 
         /**
          * Controlla se l'app è già installata (standalone mode)
@@ -174,8 +186,17 @@ export class UIManager {
         /**
          * Mostra banner installazione
          */
-        const showInstallBanner = () => {
-            if (installBanner && !wasDismissedRecently() && !isStandalone()) {
+        const showInstallBanner = (forceShow = false) => {
+            if (installBanner && (forceShow || !wasDismissedRecently()) && !isStandalone()) {
+                // Adatta il messaggio al dispositivo
+                if (isIOS()) {
+                    installBannerHint.textContent = 'Tocca "Installa" per le istruzioni iOS';
+                    installBannerBtn.textContent = 'Istruzioni';
+                } else if (!deferredPrompt) {
+                    // Browser senza supporto nativo - mostra comunque info utili
+                    installBannerHint.textContent = 'Usa il menu del browser per installare';
+                    installBannerBtn.style.display = 'none';
+                }
                 installBanner.style.display = 'block';
                 document.body.classList.add('has-install-banner');
             }
@@ -190,44 +211,55 @@ export class UIManager {
                 document.body.classList.remove('has-install-banner');
             }
         };
-
+        
         /**
-         * Mostra hint per iOS
+         * Mostra modal istruzioni iOS
          */
-        const showIOSHint = () => {
-            if (isIOS() && !isStandalone() && !wasDismissedRecently()) {
-                // Crea hint iOS se non esiste
-                let iosHint = document.getElementById('iosInstallHint');
-                if (!iosHint) {
-                    iosHint = document.createElement('div');
-                    iosHint.id = 'iosInstallHint';
-                    iosHint.className = 'ios-install-hint';
-                    iosHint.innerHTML = `
-                        <p><strong>📲 Installa Orari Lavoro</strong></p>
-                        <p>Tocca <span class="ios-icon">⬆️</span> e poi <strong>"Aggiungi a Home"</strong></p>
-                        <button class="btn btn-close-ios" id="closeIOSHint">Ho capito</button>
-                    `;
-                    document.body.appendChild(iosHint);
-                    
-                    document.getElementById('closeIOSHint')?.addEventListener('click', () => {
-                        iosHint.remove();
-                        localStorage.setItem(INSTALL_DISMISSED_KEY, Date.now().toString());
-                    });
-                }
+        const showIOSModal = () => {
+            if (iosInstallModal) {
+                iosInstallModal.classList.add('active');
             }
         };
+        
+        /**
+         * Nascondi modal iOS
+         */
+        const hideIOSModal = () => {
+            if (iosInstallModal) {
+                iosInstallModal.classList.remove('active');
+            }
+        };
+
+        // ===========================================
+        // LOGICA PRINCIPALE: Mostra banner a TUTTI i nuovi visitatori
+        // ===========================================
+        
+        // Se l'app non è già installata e l'utente non ha dismissato di recente
+        if (!isStandalone() && !wasDismissedRecently()) {
+            // Mostra il banner dopo un breve delay per non essere troppo invasivo
+            setTimeout(() => showInstallBanner(), 2000);
+        }
 
         // Evento: prompt installazione disponibile (Chrome, Edge, etc.)
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
             
+            // Aggiorna UI per installazione nativa
+            if (installBannerBtn) {
+                installBannerBtn.textContent = 'Installa';
+                installBannerBtn.style.display = 'block';
+            }
+            if (installBannerHint) {
+                installBannerHint.textContent = 'Usa l\'app offline, sempre a portata di mano!';
+            }
+            
             // Mostra bottone header
             if (installBtn) {
                 installBtn.style.display = 'block';
             }
             
-            // Mostra banner (solo se non dismissato di recente)
+            // Mostra banner se non già visibile
             showInstallBanner();
         });
 
@@ -244,12 +276,19 @@ export class UIManager {
                 deferredPrompt = null;
                 installBtn.style.display = 'none';
                 hideInstallBanner();
+            } else if (isIOS()) {
+                showIOSModal();
             }
         });
 
         // Click su bottone banner
         installBannerBtn?.addEventListener('click', async () => {
-            if (deferredPrompt) {
+            if (isIOS()) {
+                // iOS: mostra istruzioni
+                showIOSModal();
+                hideInstallBanner();
+            } else if (deferredPrompt) {
+                // Chrome/Edge: trigger installazione nativa
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
                 
@@ -267,20 +306,49 @@ export class UIManager {
         installBannerClose?.addEventListener('click', () => {
             hideInstallBanner();
             localStorage.setItem(INSTALL_DISMISSED_KEY, Date.now().toString());
-            this.showToast('Puoi installare l\'app dal pulsante in alto', 'info');
+        });
+        
+        // Click su link footer "Installa l'app"
+        showInstallHelp?.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            if (isStandalone()) {
+                this.showToast('✅ L\'app è già installata!', 'success');
+                return;
+            }
+            
+            if (isIOS()) {
+                showIOSModal();
+            } else if (deferredPrompt) {
+                deferredPrompt.prompt();
+            } else {
+                // Mostra banner con istruzioni generiche
+                showInstallBanner(true);
+            }
+        });
+        
+        // Chiudi modal iOS
+        iosModalClose?.addEventListener('click', hideIOSModal);
+        iosModalOk?.addEventListener('click', () => {
+            hideIOSModal();
+            localStorage.setItem(INSTALL_DISMISSED_KEY, Date.now().toString());
+            this.showToast('👍 Segui i passaggi per installare!', 'info');
+        });
+        
+        // Chiudi modal cliccando fuori
+        iosInstallModal?.addEventListener('click', (e) => {
+            if (e.target === iosInstallModal) {
+                hideIOSModal();
+            }
         });
 
         // App installata
         window.addEventListener('appinstalled', () => {
             hideInstallBanner();
             if (installBtn) installBtn.style.display = 'none';
+            if (showInstallHelp) showInstallHelp.style.display = 'none';
             this.showToast('🎉 App installata con successo!', 'success');
         });
-
-        // Per iOS mostra hint dopo un delay
-        if (isIOS() && !isStandalone()) {
-            setTimeout(showIOSHint, 3000);
-        }
     }
 
     /**

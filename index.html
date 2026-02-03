@@ -21,10 +21,40 @@
             <div class="install-banner-icon">📲</div>
             <div class="install-banner-text">
                 <strong>Installa Orari Lavoro</strong>
-                <span>Usa l'app offline, sempre a portata di mano!</span>
+                <span id="installBannerHint">Usa l'app offline, sempre a portata di mano!</span>
             </div>
             <button id="installBannerBtn" class="btn btn-install-banner">Installa</button>
             <button id="installBannerClose" class="btn btn-install-close" aria-label="Chiudi">✕</button>
+        </div>
+    </div>
+    
+    <!-- iOS Install Instructions (shown on Safari) -->
+    <div id="iosInstallModal" class="modal" role="dialog" aria-modal="true">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>📲 Installa su iPhone/iPad</h2>
+                <button class="modal-close" id="iosModalClose" aria-label="Chiudi">&times;</button>
+            </div>
+            <div class="modal-body ios-instructions">
+                <div class="ios-step">
+                    <span class="ios-step-number">1</span>
+                    <span>Tocca il pulsante <strong>Condividi</strong></span>
+                    <span class="ios-icon-large">⬆️</span>
+                </div>
+                <div class="ios-step">
+                    <span class="ios-step-number">2</span>
+                    <span>Scorri e tocca <strong>"Aggiungi a Home"</strong></span>
+                    <span class="ios-icon-large">➕</span>
+                </div>
+                <div class="ios-step">
+                    <span class="ios-step-number">3</span>
+                    <span>Tocca <strong>"Aggiungi"</strong> in alto a destra</span>
+                    <span class="ios-icon-large">✅</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="iosModalOk">Ho capito!</button>
+            </div>
         </div>
     </div>
 
@@ -110,6 +140,14 @@
         <footer class="backup-status" id="backupStatus">
             <span class="status-icon">✅</span>
             <span id="backupText">Ultimo backup: mai</span>
+        </footer>
+        
+        <!-- App Footer with Install Link -->
+        <footer class="app-footer">
+            <a href="#" id="showInstallHelp" class="install-help-link">
+                📲 Installa l'app sul tuo dispositivo
+            </a>
+            <span class="app-version">v1.0 • Dati salvati solo sul tuo dispositivo 🔒</span>
         </footer>
     </div>
 

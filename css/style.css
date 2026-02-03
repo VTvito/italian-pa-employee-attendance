@@ -940,6 +940,74 @@ body {
     margin-top: var(--spacing-md);
 }
 
+/* iOS Modal Instructions */
+.ios-instructions {
+    text-align: left;
+}
+
+.ios-step {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+}
+
+.ios-step-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: var(--color-primary);
+    color: white;
+    border-radius: 50%;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.ios-step span:nth-child(2) {
+    flex: 1;
+}
+
+.ios-icon-large {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+/* App Footer */
+.app-footer {
+    text-align: center;
+    padding: var(--spacing-lg) var(--spacing-md);
+    margin-top: var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.install-help-link {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: var(--font-size-base);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+}
+
+.install-help-link:hover {
+    background: var(--color-primary);
+    color: white;
+}
+
+.app-version {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
 /* Spazio per il banner quando visibile */
 body.has-install-banner .app-container {
     margin-top: 80px;

@@ -48,6 +48,7 @@
 - **Funziona senza internet** - perfetto in ufficio senza WiFi
 - **Si aggiorna automaticamente** quando torni online
 - **Aggiornamenti PWA**: se compare il banner, tocca "Aggiorna ora" per applicare la nuova versione
+- **Shortcut rapide**: tieni premuta l'icona dell'app e scegli "Entrata" o "Uscita" per timbrare subito
 
 ### 📤 Export Dati
 - **JSON**: backup completo importabile

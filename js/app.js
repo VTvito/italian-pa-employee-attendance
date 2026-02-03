@@ -22,6 +22,9 @@ async function initApp() {
         app = new AppController();
         await app.init();
 
+        // Gestisci eventuali shortcut (entrata/uscita) da homescreen
+        await handleQuickAction(app);
+
         // Registra Service Worker per PWA
         await registerServiceWorker();
 
@@ -30,6 +33,32 @@ async function initApp() {
     } catch (error) {
         console.error('❌ Errore inizializzazione:', error);
         showFatalError(error);
+    }
+}
+
+/**
+ * Gestisce shortcut PWA (entrata/uscita) via query string
+ * Esempio: ?action=entrata | ?action=uscita
+ * @param {AppController} appController
+ */
+async function handleQuickAction(appController) {
+    try {
+        const url = new URL(window.location.href);
+        const action = url.searchParams.get('action');
+
+        if (!action) return;
+
+        if (action === 'entrata') {
+            await appController.handleEntrata();
+        } else if (action === 'uscita') {
+            await appController.handleUscita();
+        }
+
+        // Pulisci query string per evitare doppie timbrature al refresh
+        url.searchParams.delete('action');
+        window.history.replaceState({}, document.title, url.pathname + url.hash);
+    } catch (e) {
+        console.warn('Errore gestione shortcut:', e);
     }
 }
 

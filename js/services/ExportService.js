@@ -51,15 +51,17 @@ export class ExportService {
 
     /**
      * Genera il contenuto CSV per una settimana
+     * Usa punto e virgola come separatore per compatibilità Excel italiano
      * @param {string} weekKey - Chiave settimana
      * @param {Object} weekData - Dati della settimana
      * @returns {string} Contenuto CSV
      */
     generateCSV(weekKey, weekData) {
+        const SEP = ';';
         const lines = [];
         
         // Header
-        lines.push('Data,Giorno,Tipo,Orario,Ore Lavorate');
+        lines.push(['Data', 'Giorno', 'Tipo', 'Orario', 'Ore Lavorate'].join(SEP));
         
         // Parse week key per ottenere le date
         const { year, week } = parseWeekKey(weekKey);
@@ -72,7 +74,8 @@ export class ExportService {
             const dateKey = formatDateISO(date);
             const entries = weekData[dateKey] || [];
             const dayName = DAY_NAMES[date.getDay()];
-            const dateStr = formatDateIT(date);
+            // Formato data con zeri iniziali per evitare ambiguità in Excel
+            const dateStr = this.formatDateCSV(date);
             
             // Calcola ore del giorno
             const dayHours = timeCalculator.calculateDayHours(entries, dateKey);
@@ -80,7 +83,7 @@ export class ExportService {
             
             if (entries.length === 0) {
                 // Giorno senza registrazioni
-                lines.push(`${dateStr},${dayName},-,-,-`);
+                lines.push([dateStr, dayName, '-', '-', '-'].join(SEP));
             } else {
                 // Prima entry con ore calcolate
                 const firstEntry = entries[0];
@@ -88,10 +91,10 @@ export class ExportService {
                 const firstValue = firstEntry.time || (firstEntry.hours !== undefined ? `${firstEntry.hours}h` : '--:--');
                 
                 if (entries.length === 1) {
-                    lines.push(`${dateStr},${dayName},${firstType},${firstValue},${dayHours.formatted}`);
+                    lines.push([dateStr, dayName, firstType, firstValue, dayHours.formatted].join(SEP));
                 } else {
                     // Più entry: la prima con le ore, le altre senza
-                    lines.push(`${dateStr},${dayName},${firstType},${firstValue},`);
+                    lines.push([dateStr, dayName, firstType, firstValue, ''].join(SEP));
                     
                     for (let i = 1; i < entries.length; i++) {
                         const entry = entries[i];
@@ -100,7 +103,7 @@ export class ExportService {
                         
                         // Ultima entry ha le ore calcolate
                         const hours = i === entries.length - 1 ? dayHours.formatted : '';
-                        lines.push(`${dateStr},${dayName},${type},${value},${hours}`);
+                        lines.push([dateStr, dayName, type, value, hours].join(SEP));
                     }
                 }
             }
@@ -113,11 +116,23 @@ export class ExportService {
         const totalFormatted = this.minutesToTimeString(totalMinutes);
         const balance = timeCalculator.calculateBalance(totalMinutes);
         
-        lines.push(`,,,TOTALE SETTIMANA,${totalFormatted}`);
-        lines.push(`,,,ORE RICHIESTE,36:00`);
-        lines.push(`,,,SALDO,${balance.formatted}`);
+        lines.push(['', '', '', 'TOTALE SETTIMANA', totalFormatted].join(SEP));
+        lines.push(['', '', '', 'ORE RICHIESTE', '36:00'].join(SEP));
+        lines.push(['', '', '', 'SALDO', balance.formatted].join(SEP));
         
         return lines.join('\n');
+    }
+
+    /**
+     * Formatta una data per il CSV con zeri iniziali (DD/MM/YYYY)
+     * @param {Date} date - Data da formattare
+     * @returns {string} Data formattata
+     */
+    formatDateCSV(date) {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
     }
 
     /**

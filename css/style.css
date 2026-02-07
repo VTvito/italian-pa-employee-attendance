@@ -403,6 +403,42 @@ body {
     color: var(--color-primary);
 }
 
+/* Day delta (extra/deficit minutes) */
+.day-hours-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.day-delta {
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.delta-positive {
+    color: var(--color-success-dark);
+    background-color: rgba(16, 185, 129, 0.12);
+}
+
+.delta-negative {
+    color: var(--color-danger-dark);
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+.delta-neutral {
+    color: var(--color-text-muted);
+}
+
+.delta-in-progress {
+    color: var(--color-text-muted);
+    font-style: italic;
+    font-weight: 400;
+}
+
 .day-entries {
     padding: var(--spacing-sm);
 }

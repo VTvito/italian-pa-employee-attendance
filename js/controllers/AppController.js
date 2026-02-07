@@ -646,8 +646,8 @@ export class AppController {
         if (!backupInfo.isRecent) {
             const hours = backupInfo.hoursSince;
             
-            // Mostra reminder solo se sono passate almeno 48h
-            if (hours >= 48) {
+            // Mostra reminder solo se sono passate almeno 72h (3 giorni)
+            if (hours >= 72) {
                 eventBus.emit(EVENTS.BACKUP_NEEDED, { hoursSinceBackup: hours });
             }
         }

@@ -170,9 +170,18 @@ export class UIManager {
 
         /**
          * Controlla se è iOS (Safari)
+         * Include iPadOS 13+ che si presenta come Mac
          */
         const isIOS = () => {
-            return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            // Classic iOS detection
+            if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+                return true;
+            }
+            // Modern iPadOS 13+ detection (reports as Macintosh)
+            if (navigator.userAgent.includes('Macintosh') && navigator.maxTouchPoints > 1) {
+                return true;
+            }
+            return false;
         };
         
         /**
@@ -197,8 +206,8 @@ export class UIManager {
             if (installBanner && (forceShow || !wasDismissedRecently()) && !isStandalone()) {
                 // Adatta il messaggio al dispositivo
                 if (isIOS()) {
-                    installBannerHint.textContent = 'Tocca "Installa" per le istruzioni iOS';
-                    installBannerBtn.textContent = 'Istruzioni';
+                    installBannerHint.textContent = 'Aggiungi l\'app alla schermata Home';
+                    installBannerBtn.textContent = 'Scopri come';
                 } else if (!deferredPrompt) {
                     // Browser senza supporto nativo - mostra comunque info utili
                     installBannerHint.textContent = 'Usa il menu del browser per installare';
@@ -224,7 +233,7 @@ export class UIManager {
          */
         const showIOSModal = () => {
             if (iosInstallModal) {
-                iosInstallModal.classList.add('active');
+                iosInstallModal.classList.add('is-open');
             }
         };
         
@@ -233,7 +242,7 @@ export class UIManager {
          */
         const hideIOSModal = () => {
             if (iosInstallModal) {
-                iosInstallModal.classList.remove('active');
+                iosInstallModal.classList.remove('is-open');
             }
         };
 
@@ -415,6 +424,16 @@ export class UIManager {
         // Calcola ore del giorno
         const dayHours = timeCalculator.calculateDayHours(entries, day.dateKey);
 
+        // Calcola delta giornaliero (minuti extra/deficit)
+        const delta = timeCalculator.calculateDayDelta(entries, day.dateKey);
+        let deltaHTML = '';
+        if (delta && !delta.hasIncomplete) {
+            const deltaClass = delta.isPositive ? 'delta-positive' : delta.isNegative ? 'delta-negative' : 'delta-neutral';
+            deltaHTML = `<span class="day-delta ${deltaClass}">${delta.formatted}</span>`;
+        } else if (delta && delta.hasIncomplete) {
+            deltaHTML = `<span class="day-delta delta-in-progress">in corso…</span>`;
+        }
+
         // Header
         const header = document.createElement('header');
         header.className = 'day-header';
@@ -423,7 +442,10 @@ export class UIManager {
                 <span class="day-name">${this.getDayName(day.dayOfWeek)}</span>
                 <span class="day-date">${this.formatDate(day.date)}</span>
             </div>
-            <span class="day-hours">${dayHours.formatted}</span>
+            <div class="day-hours-wrapper">
+                <span class="day-hours">${dayHours.formatted}</span>
+                ${deltaHTML}
+            </div>
         `;
         card.appendChild(header);
 
@@ -564,16 +586,23 @@ export class UIManager {
             return;
         }
 
-        const { hoursSince, isRecent } = backupInfo;
+        const { hoursSince } = backupInfo;
 
-        if (isRecent) {
-            backupStatus.className = 'backup-status';
-            backupText.textContent = hoursSince < 1 
-                ? 'Ultimo backup: meno di 1 ora fa'
-                : `Ultimo backup: ${hoursSince}h fa`;
+        // Sempre stile neutro - niente warning aggressivi
+        backupStatus.className = 'backup-status';
+
+        if (hoursSince < 1) {
+            backupText.textContent = 'Ultimo backup: meno di 1 ora fa';
+        } else if (hoursSince < 24) {
+            backupText.textContent = `Ultimo backup: ${hoursSince}h fa`;
         } else {
-            backupStatus.className = 'backup-status status-warning';
-            backupText.textContent = `Ultimo backup: ${hoursSince}h fa ⚠️`;
+            const days = Math.round(hoursSince / 24);
+            if (days <= 7) {
+                backupText.textContent = `Ultimo backup: ${days} ${days === 1 ? 'giorno' : 'giorni'} fa`;
+            } else {
+                // Messaggio gentile dopo 7+ giorni, senza icona allarmante
+                backupText.textContent = `Ultimo backup: ${days} giorni fa · Consigliato backup`;
+            }
         }
     }
 

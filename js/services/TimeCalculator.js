@@ -249,6 +249,56 @@ export class TimeCalculator {
             ? CONFIG.FRIDAY_TARGET_HOURS
             : CONFIG.DAILY_TARGET_HOURS;
     }
+
+    /**
+     * Calcola il delta giornaliero (minuti extra/deficit rispetto al target)
+     * @param {Array} entries - Array di entry per il giorno
+     * @param {string} dateKey - Data in formato ISO
+     * @returns {{minutes: number, formatted: string, isPositive: boolean, isNegative: boolean, isNeutral: boolean, hasIncomplete: boolean}|null}
+     */
+    calculateDayDelta(entries, dateKey) {
+        if (!entries || entries.length === 0) {
+            return null; // Nessuna entry, nessun delta
+        }
+
+        // Non mostrare delta per giorni assente
+        if (entries.length === 1 && entries[0].type === 'assente') {
+            return null;
+        }
+
+        const dayHours = this.calculateDayHours(entries, dateKey);
+        const targetMinutes = this.hoursToMinutes(this.getDailyTarget(dateKey));
+        const deltaMinutes = dayHours.minutes - targetMinutes;
+
+        return {
+            minutes: deltaMinutes,
+            formatted: this.formatDeltaMinutes(deltaMinutes),
+            isPositive: deltaMinutes > 0,
+            isNegative: deltaMinutes < 0,
+            isNeutral: deltaMinutes === 0,
+            hasIncomplete: dayHours.hasIncomplete
+        };
+    }
+
+    /**
+     * Formatta i minuti delta in formato leggibile (+1h 30m, -15m, ecc.)
+     * @param {number} minutes - Minuti delta (positivi o negativi)
+     * @returns {string}
+     */
+    formatDeltaMinutes(minutes) {
+        const sign = minutes >= 0 ? '+' : '-';
+        const absMinutes = Math.abs(minutes);
+        const hours = Math.floor(absMinutes / 60);
+        const mins = absMinutes % 60;
+
+        if (hours === 0) {
+            return `${sign}${mins}min`;
+        }
+        if (mins === 0) {
+            return `${sign}${hours}h`;
+        }
+        return `${sign}${hours}h ${mins}m`;
+    }
 }
 
 // Esporta istanza singleton

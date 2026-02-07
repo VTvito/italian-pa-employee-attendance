@@ -10,7 +10,7 @@ import { IndexedDBAdapter } from './IndexedDBAdapter.js';
 import { eventBus, EVENTS } from '../utils/EventBus.js';
 
 const BACKUP_INTERVAL_SAVES = 5;  // Backup ogni N salvataggi
-const BACKUP_INTERVAL_HOURS = 24; // Ore massime tra backup
+const BACKUP_INTERVAL_HOURS = 72; // Ore massime tra backup (3 giorni)
 const OLD_DATA_CHECK_DAYS = 30;   // Controllo dati vecchi ogni N giorni
 const OLD_DATA_THRESHOLD_MONTHS = 3; // Soglia per dati "vecchi"
 
@@ -20,6 +20,7 @@ export class StorageManager {
         this.indexedDB = new IndexedDBAdapter();
         this.isInitialized = false;
         this.useIndexedDB = false;
+        this._backupReminderShownThisSession = false;
     }
 
     /**
@@ -205,10 +206,11 @@ export class StorageManager {
             return;
         }
 
-        // Backup se sono passate più di 24 ore
-        if (lastBackupTime) {
+        // Backup se sono passate più di 72 ore (solo una volta per sessione)
+        if (lastBackupTime && !this._backupReminderShownThisSession) {
             const hoursSinceBackup = (now - lastBackupTime) / (1000 * 60 * 60);
             if (hoursSinceBackup >= BACKUP_INTERVAL_HOURS) {
+                this._backupReminderShownThisSession = true;
                 eventBus.emit(EVENTS.BACKUP_NEEDED, { 
                     hoursSinceBackup: Math.round(hoursSinceBackup) 
                 });

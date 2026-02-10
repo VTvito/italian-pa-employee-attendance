@@ -1,78 +1,69 @@
 /* ============================================
-   CSS Variables - Design Tokens (iOS-inspired)
+   CSS Variables - Design Tokens
    ============================================ */
 :root {
-    /* iOS-inspired color palette */
-    --color-primary: #007aff;
-    --color-primary-dark: #0056b3;
-    --color-primary-light: #4da3ff;
-    --color-primary-ultra-light: rgba(0, 122, 255, 0.08);
+    /* Colors */
+    --color-primary: #2563eb;
+    --color-primary-dark: #1d4ed8;
+    --color-primary-light: #3b82f6;
     
-    --color-success: #34c759;
-    --color-success-dark: #248a3d;
-    --color-success-light: #30d158;
+    --color-success: #10b981;
+    --color-success-dark: #059669;
+    --color-success-light: #34d399;
     
-    --color-warning: #ff9500;
-    --color-warning-dark: #c93400;
-    --color-warning-light: #ffb340;
+    --color-warning: #f59e0b;
+    --color-warning-dark: #d97706;
+    --color-warning-light: #fbbf24;
     
-    --color-danger: #ff3b30;
-    --color-danger-dark: #d70015;
-    --color-danger-light: #ff6961;
+    --color-danger: #ef4444;
+    --color-danger-dark: #dc2626;
+    --color-danger-light: #f87171;
     
-    --color-smart: #af52de;
-    --color-smart-dark: #8944ab;
+    --color-smart: #8b5cf6;
+    --color-smart-dark: #7c3aed;
     
-    --color-assente: #8e8e93;
-    --color-assente-dark: #636366;
+    --color-assente: #6b7280;
+    --color-assente-dark: #4b5563;
     
-    /* iOS Neutrals */
-    --color-bg: #f2f2f7;
+    /* Neutrals */
+    --color-bg: #f3f4f6;
     --color-bg-card: #ffffff;
-    --color-bg-secondary: #e5e5ea;
-    --color-bg-grouped: #f2f2f7;
-    --color-text: #1c1c1e;
-    --color-text-secondary: #3c3c43;
-    --color-text-light: #8e8e93;
-    --color-text-muted: #aeaeb2;
-    --color-border: rgba(60, 60, 67, 0.12);
-    --color-separator: rgba(60, 60, 67, 0.18);
+    --color-bg-dark: #e5e7eb;
+    --color-text: #1f2937;
+    --color-text-light: #6b7280;
+    --color-text-muted: #9ca3af;
+    --color-border: #d1d5db;
     
     /* Spacing */
     --spacing-xs: 0.25rem;
     --spacing-sm: 0.5rem;
     --spacing-md: 1rem;
-    --spacing-lg: 1.25rem;
-    --spacing-xl: 1.5rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
     
-    /* iOS Border Radius */
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 20px;
+    /* Border Radius */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
     --radius-full: 9999px;
     
-    /* iOS Shadows */
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-    --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.08);
-    --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     
-    /* Typography - SF Pro inspired */
-    --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
-    --font-mono: 'SF Mono', 'Menlo', 'Consolas', monospace;
-    --font-size-xs: 0.75rem;
-    --font-size-sm: 0.8125rem;
-    --font-size-base: 0.9375rem;
-    --font-size-lg: 1.0625rem;
+    /* Typography */
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
     --font-size-xl: 1.25rem;
     --font-size-2xl: 1.5rem;
-    --font-size-3xl: 2rem;
     
     /* Transitions */
     --transition-fast: 150ms ease;
-    --transition-base: 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    --transition-slow: 350ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    --transition-spring: 500ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --transition-base: 200ms ease;
+    --transition-slow: 300ms ease;
 }
 
 /* ============================================
@@ -87,65 +78,60 @@
 html {
     font-size: 16px;
     -webkit-text-size-adjust: 100%;
-    scroll-behavior: smooth;
 }
 
 body {
     font-family: var(--font-family);
     font-size: var(--font-size-base);
-    line-height: 1.47;
+    line-height: 1.5;
     color: var(--color-text);
     background-color: var(--color-bg);
     min-height: 100vh;
-    min-height: 100dvh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    letter-spacing: -0.01em;
 }
 
 /* ============================================
    App Container
    ============================================ */
 .app-container {
-    max-width: 560px;
+    max-width: 600px;
     margin: 0 auto;
     padding: var(--spacing-md);
-    padding-top: calc(var(--spacing-md) + env(safe-area-inset-top, 0px));
-    padding-bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom));
 }
 
 /* ============================================
-   Header - iOS Large Title style
+   Header
    ============================================ */
 .app-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--spacing-lg);
-    padding: var(--spacing-sm) 0 var(--spacing-md);
-    border-bottom: none;
+    padding-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--color-primary);
 }
 
 .app-header h1 {
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-xl);
     font-weight: 700;
-    color: var(--color-text);
-    letter-spacing: -0.02em;
+    color: var(--color-primary);
 }
 
 /* ============================================
-   Buttons - iOS Style
+   Buttons
    ============================================ */
 .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 10px 18px;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
     font-family: inherit;
     font-size: var(--font-size-base);
-    font-weight: 600;
-    line-height: 1.3;
+    font-weight: 500;
+    line-height: 1.5;
     text-align: center;
     text-decoration: none;
     border: none;
@@ -154,25 +140,19 @@ body {
     transition: all var(--transition-fast);
     min-height: 44px;
     min-width: 44px;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-}
-
-.btn:active:not(:disabled) {
-    transform: scale(0.97);
-    opacity: 0.85;
 }
 
 .btn:focus-visible {
-    outline: 3px solid var(--color-primary-light);
+    outline: 2px solid var(--color-primary);
     outline-offset: 2px;
 }
 
 .btn:disabled {
-    opacity: 0.35;
+    opacity: 0.5;
     cursor: not-allowed;
 }
 
+/* Button Variants */
 .btn-primary {
     background-color: var(--color-primary);
     color: white;
@@ -182,7 +162,7 @@ body {
 }
 
 .btn-secondary {
-    background-color: var(--color-bg-secondary);
+    background-color: var(--color-bg-dark);
     color: var(--color-text);
 }
 .btn-secondary:hover:not(:disabled) {
@@ -206,25 +186,22 @@ body {
 }
 
 .btn-install {
-    background-color: var(--color-primary);
+    background-color: var(--color-success);
     color: white;
     font-size: var(--font-size-sm);
-    padding: 6px 14px;
-    border-radius: var(--radius-full);
+    padding: var(--spacing-xs) var(--spacing-sm);
 }
 .btn-install:hover:not(:disabled) {
-    background-color: var(--color-primary-dark);
+    background-color: var(--color-success-dark);
 }
 
 /* Navigation Buttons */
 .btn-nav {
-    background-color: var(--color-primary-ultra-light);
+    background-color: var(--color-bg-card);
     color: var(--color-primary);
-    border: none;
+    border: 1px solid var(--color-primary);
     font-size: var(--font-size-sm);
-    font-weight: 600;
-    padding: 8px 12px;
-    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm);
 }
 .btn-nav:hover:not(:disabled) {
     background-color: var(--color-primary);
@@ -234,56 +211,55 @@ body {
 /* Action Buttons */
 .btn-action {
     flex: 1;
-    padding: 14px 8px;
-    font-size: var(--font-size-sm);
-    font-weight: 700;
+    padding: var(--spacing-md);
+    font-size: var(--font-size-base);
+    font-weight: 600;
     border-radius: var(--radius-lg);
-    box-shadow: none;
+    box-shadow: var(--shadow-md);
 }
 
 .btn-entrata {
-    background: linear-gradient(145deg, #34c759, #30b350);
+    background-color: var(--color-success);
     color: white;
 }
 .btn-entrata:hover:not(:disabled) {
-    background: linear-gradient(145deg, #30b350, #248a3d);
+    background-color: var(--color-success-dark);
 }
 
 .btn-uscita {
-    background: linear-gradient(145deg, #ff3b30, #e0342b);
+    background-color: var(--color-danger);
     color: white;
 }
 .btn-uscita:hover:not(:disabled) {
-    background: linear-gradient(145deg, #e0342b, #d70015);
+    background-color: var(--color-danger-dark);
 }
 
 .btn-smart {
-    background: linear-gradient(145deg, #af52de, #9a42c8);
+    background-color: var(--color-smart);
     color: white;
 }
 .btn-smart:hover:not(:disabled) {
-    background: linear-gradient(145deg, #9a42c8, #8944ab);
+    background-color: var(--color-smart-dark);
 }
 
 .btn-assente {
-    background: linear-gradient(145deg, #8e8e93, #7c7c82);
+    background-color: var(--color-assente);
     color: white;
 }
 .btn-assente:hover:not(:disabled) {
-    background: linear-gradient(145deg, #7c7c82, #636366);
+    background-color: var(--color-assente-dark);
 }
 
 /* Export Buttons */
 .btn-export {
     background-color: var(--color-bg-card);
-    color: var(--color-primary);
-    border: none;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
     font-size: var(--font-size-sm);
-    font-weight: 500;
-    box-shadow: var(--shadow-sm);
 }
 .btn-export:hover:not(:disabled) {
-    background-color: var(--color-primary-ultra-light);
+    background-color: var(--color-bg-dark);
+    border-color: var(--color-text-light);
 }
 
 /* ============================================
@@ -298,40 +274,34 @@ body {
     padding: var(--spacing-md);
     background-color: var(--color-bg-card);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
 }
 
 .week-indicator {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
+    gap: var(--spacing-xs);
 }
 
 .week-label {
     font-size: var(--font-size-lg);
     font-weight: 700;
     color: var(--color-text);
-    letter-spacing: -0.01em;
 }
 
 .year-label {
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-sm);
     color: var(--color-text-light);
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
 }
 
 .badge {
     display: inline-flex;
     align-items: center;
-    padding: 3px 10px;
-    font-size: 0.6875rem;
-    font-weight: 700;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
     border-radius: var(--radius-full);
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
 }
 
 .badge-current {
@@ -345,7 +315,7 @@ body {
 .action-buttons {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    gap: var(--spacing-sm);
     margin-bottom: var(--spacing-md);
 }
 
@@ -356,12 +326,12 @@ body {
 
 .btn-add-entry {
     width: 100%;
-    padding: 14px;
-    background: var(--color-bg-card);
+    padding: var(--spacing-md);
+    background: linear-gradient(135deg, var(--color-bg-card) 0%, var(--color-bg) 100%);
     border: 2px dashed var(--color-border);
     border-radius: var(--radius-lg);
-    color: var(--color-text-light);
-    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    font-size: var(--font-size-base);
     font-weight: 500;
     cursor: pointer;
     transition: all var(--transition-fast);
@@ -370,21 +340,21 @@ body {
 .btn-add-entry:hover {
     border-color: var(--color-primary);
     color: var(--color-primary);
-    background: var(--color-primary-ultra-light);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, var(--color-bg-card) 100%);
 }
 
 .btn-add-entry:focus {
-    outline: 3px solid var(--color-primary-light);
+    outline: 2px solid var(--color-primary);
     outline-offset: 2px;
 }
 
 /* ============================================
-   Week Days List - iOS grouped list
+   Week Days List
    ============================================ */
 .week-days {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: var(--spacing-md);
     margin-bottom: var(--spacing-lg);
 }
 
@@ -393,49 +363,44 @@ body {
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     overflow: hidden;
-    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    transition: box-shadow var(--transition-fast);
 }
 
-.day-card:active {
-    transform: scale(0.99);
+.day-card:hover {
+    box-shadow: var(--shadow-md);
 }
 
 .day-card.is-today {
     border: 2px solid var(--color-primary);
-    box-shadow: 0 0 0 3px var(--color-primary-ultra-light), var(--shadow-md);
 }
 
 .day-card.is-weekend {
     background-color: var(--color-bg);
-    opacity: 0.6;
+    opacity: 0.7;
 }
 
 .day-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
-    background: linear-gradient(180deg, rgba(0,0,0,0.015) 0%, rgba(0,0,0,0.03) 100%);
-    border-bottom: 0.5px solid var(--color-separator);
+    padding: var(--spacing-md);
+    background-color: var(--color-bg-dark);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .day-name {
     font-weight: 600;
     color: var(--color-text);
-    font-size: var(--font-size-base);
 }
 
 .day-date {
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-sm);
     color: var(--color-text-light);
-    margin-left: 6px;
 }
 
 .day-hours {
     font-weight: 700;
     color: var(--color-primary);
-    font-family: var(--font-mono);
-    font-size: var(--font-size-base);
 }
 
 /* Day delta (extra/deficit minutes) */
@@ -443,102 +408,98 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 3px;
+    gap: 2px;
 }
 
 .day-delta {
-    font-size: var(--font-size-xs);
-    font-weight: 700;
+    font-size: 0.75rem;
+    font-weight: 600;
     line-height: 1;
-    padding: 2px 8px;
-    border-radius: var(--radius-full);
-    font-family: var(--font-mono);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
 }
 
 .delta-positive {
     color: var(--color-success-dark);
-    background-color: rgba(52, 199, 89, 0.12);
+    background-color: rgba(16, 185, 129, 0.12);
 }
 
 .delta-negative {
-    color: var(--color-danger);
-    background-color: rgba(255, 59, 48, 0.1);
+    color: var(--color-danger-dark);
+    background-color: rgba(239, 68, 68, 0.1);
 }
 
 .delta-neutral {
     color: var(--color-text-muted);
-    background: transparent;
 }
 
 .delta-in-progress {
     color: var(--color-text-muted);
     font-style: italic;
     font-weight: 400;
-    font-family: var(--font-family);
 }
 
 .day-entries {
-    padding: 6px 8px;
+    padding: var(--spacing-sm);
 }
 
 .day-entries.empty {
-    padding: 16px;
+    padding: var(--spacing-md);
     text-align: center;
     color: var(--color-text-muted);
     font-style: italic;
 }
 
+/* Giorno vuoto cliccabile */
 .day-entries.empty.clickable {
     cursor: pointer;
     transition: all var(--transition-fast);
-    border: 1.5px dashed var(--color-border);
+    border: 2px dashed var(--color-border);
     border-radius: var(--radius-md);
-    margin: 8px;
+    margin: var(--spacing-sm);
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    -webkit-tap-highlight-color: transparent;
+    gap: var(--spacing-xs);
 }
 
 .day-entries.empty.clickable:hover {
     border-color: var(--color-primary);
-    background-color: var(--color-primary-ultra-light);
+    background-color: rgba(37, 99, 235, 0.05);
 }
 
 .day-entries.empty.clickable:focus {
-    outline: 3px solid var(--color-primary-light);
+    outline: 2px solid var(--color-primary);
     outline-offset: 2px;
 }
 
 .day-entries .empty-text {
     color: var(--color-text-muted);
-    font-size: var(--font-size-sm);
 }
 
 .day-entries .add-hint {
     color: var(--color-primary);
     font-style: normal;
-    font-weight: 600;
+    font-weight: 500;
     font-size: var(--font-size-sm);
 }
 
+/* Bottone "Aggiungi" dentro la lista entry */
 .btn-add-more {
     display: block;
     width: 100%;
-    padding: 8px;
-    margin-top: 4px;
+    padding: var(--spacing-sm);
+    margin-top: var(--spacing-xs);
     background: none;
     border: 1px dashed var(--color-border);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     color: var(--color-primary);
-    font-size: var(--font-size-xs);
-    font-weight: 500;
+    font-size: var(--font-size-sm);
     cursor: pointer;
     transition: all var(--transition-fast);
 }
 
 .btn-add-more:hover {
-    background-color: var(--color-primary-ultra-light);
+    background-color: rgba(37, 99, 235, 0.05);
     border-color: var(--color-primary);
 }
 
@@ -547,72 +508,63 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 12px;
-    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
     cursor: pointer;
     transition: background-color var(--transition-fast);
-    -webkit-tap-highlight-color: transparent;
 }
 
 .entry-item:hover {
-    background-color: var(--color-primary-ultra-light);
-}
-
-.entry-item:active {
-    background-color: rgba(0, 122, 255, 0.12);
+    background-color: var(--color-bg);
 }
 
 .entry-info {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--spacing-sm);
 }
 
 .entry-time {
-    font-weight: 700;
-    font-family: var(--font-mono);
-    font-size: var(--font-size-base);
-    min-width: 48px;
-    color: var(--color-text);
+    font-weight: 600;
+    font-family: 'SF Mono', 'Consolas', monospace;
+    min-width: 50px;
 }
 
 .entry-type {
-    font-size: var(--font-size-xs);
-    padding: 3px 10px;
-    border-radius: var(--radius-full);
-    font-weight: 600;
-    letter-spacing: 0.01em;
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-weight: 500;
 }
 
 .entry-type.type-entrata {
-    background-color: rgba(52, 199, 89, 0.12);
+    background-color: rgba(16, 185, 129, 0.15);
     color: var(--color-success-dark);
 }
 
 .entry-type.type-uscita {
-    background-color: rgba(255, 59, 48, 0.1);
-    color: var(--color-danger);
+    background-color: rgba(239, 68, 68, 0.15);
+    color: var(--color-danger-dark);
 }
 
 .entry-type.type-smart {
-    background-color: rgba(175, 82, 222, 0.12);
+    background-color: rgba(139, 92, 246, 0.15);
     color: var(--color-smart-dark);
 }
 
 .entry-type.type-assente {
-    background-color: rgba(142, 142, 147, 0.12);
+    background-color: rgba(107, 114, 128, 0.15);
     color: var(--color-assente-dark);
 }
 
 .entry-edit-btn {
     background: none;
     border: none;
-    padding: 4px;
+    padding: var(--spacing-xs);
     cursor: pointer;
-    font-size: var(--font-size-sm);
-    opacity: 0.4;
+    font-size: var(--font-size-lg);
+    opacity: 0.5;
     transition: opacity var(--transition-fast);
-    -webkit-tap-highlight-color: transparent;
 }
 
 .entry-item:hover .entry-edit-btn {
@@ -625,7 +577,7 @@ body {
 .week-summary {
     background-color: var(--color-bg-card);
     border-radius: var(--radius-lg);
-    padding: 16px 20px;
+    padding: var(--spacing-lg);
     margin-bottom: var(--spacing-lg);
     box-shadow: var(--shadow-md);
 }
@@ -634,30 +586,22 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 0;
+    padding: var(--spacing-sm) 0;
 }
 
 .summary-row:not(:last-child) {
-    border-bottom: 0.5px solid var(--color-separator);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .summary-label {
     font-weight: 500;
-    color: var(--color-text-secondary);
-    font-size: var(--font-size-sm);
+    color: var(--color-text-light);
 }
 
 .summary-value {
     font-weight: 700;
     font-size: var(--font-size-lg);
-    font-family: var(--font-mono);
-    letter-spacing: -0.02em;
-}
-
-.summary-balance .summary-label {
-    font-weight: 600;
-    font-size: var(--font-size-base);
-    color: var(--color-text);
+    font-family: 'SF Mono', 'Consolas', monospace;
 }
 
 .summary-balance .summary-value {
@@ -682,7 +626,7 @@ body {
 .export-buttons {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    gap: var(--spacing-sm);
     margin-bottom: var(--spacing-md);
 }
 
@@ -694,25 +638,25 @@ body {
     align-items: center;
     justify-content: center;
     gap: var(--spacing-sm);
-    padding: 12px;
-    background-color: transparent;
+    padding: var(--spacing-md);
+    background-color: var(--color-bg-card);
     border-radius: var(--radius-md);
-    font-size: var(--font-size-xs);
-    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-light);
 }
 
 .backup-status.status-warning {
-    background-color: rgba(255, 149, 0, 0.08);
+    background-color: rgba(245, 158, 11, 0.1);
     color: var(--color-warning-dark);
 }
 
 .backup-status.status-danger {
-    background-color: rgba(255, 59, 48, 0.08);
+    background-color: rgba(239, 68, 68, 0.1);
     color: var(--color-danger);
 }
 
 /* ============================================
-   Modal - iOS Sheet style
+   Modal
    ============================================ */
 .modal {
     display: none;
@@ -721,13 +665,11 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.4);
-    -webkit-backdrop-filter: blur(4px);
-    backdrop-filter: blur(4px);
+    background-color: rgba(0, 0, 0, 0.5);
     z-index: 1000;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
-    padding: 0;
+    padding: var(--spacing-md);
     opacity: 0;
     transition: opacity var(--transition-base);
 }
@@ -739,39 +681,27 @@ body {
 
 .modal-content {
     background-color: var(--color-bg-card);
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border-radius: var(--radius-lg);
     width: 100%;
-    max-width: 560px;
+    max-width: 450px;
     max-height: 90vh;
-    max-height: 90dvh;
     overflow-y: auto;
     box-shadow: var(--shadow-lg);
-    animation: modalSlideUp var(--transition-slow) cubic-bezier(0.16, 1, 0.3, 1);
-    -webkit-overflow-scrolling: touch;
+    animation: modalSlideIn var(--transition-base) ease-out;
 }
 
 .modal-small {
-    max-width: 400px;
+    max-width: 350px;
 }
 
-/* Handle indicator for iOS sheet */
-.modal-content::before {
-    content: '';
-    display: block;
-    width: 36px;
-    height: 5px;
-    background: var(--color-text-muted);
-    border-radius: var(--radius-full);
-    margin: 8px auto 0;
-    opacity: 0.4;
-}
-
-@keyframes modalSlideUp {
+@keyframes modalSlideIn {
     from {
-        transform: translateY(100%);
+        transform: translateY(-20px);
+        opacity: 0;
     }
     to {
         transform: translateY(0);
+        opacity: 1;
     }
 }
 
@@ -779,48 +709,40 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 20px 12px;
-    border-bottom: 0.5px solid var(--color-separator);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .modal-header h2 {
     font-size: var(--font-size-lg);
     font-weight: 600;
-    letter-spacing: -0.01em;
 }
 
 .modal-close {
-    background: var(--color-bg-secondary);
+    background: none;
     border: none;
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
+    font-size: var(--font-size-2xl);
+    color: var(--color-text-light);
     cursor: pointer;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    padding: var(--spacing-xs);
     line-height: 1;
-    transition: background var(--transition-fast);
-    -webkit-tap-highlight-color: transparent;
+    transition: color var(--transition-fast);
 }
 
 .modal-close:hover {
-    background: var(--color-border);
+    color: var(--color-danger);
 }
 
 .modal-body {
-    padding: 20px;
+    padding: var(--spacing-lg);
 }
 
 .modal-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
-    padding: 12px 20px;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-    border-top: 0.5px solid var(--color-separator);
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-top: 1px solid var(--color-border);
     flex-wrap: wrap;
 }
 
@@ -829,7 +751,7 @@ body {
 }
 
 /* ============================================
-   Forms - iOS style inputs
+   Forms
    ============================================ */
 .form-group {
     margin-bottom: var(--spacing-md);
@@ -837,45 +759,34 @@ body {
 
 .form-group label {
     display: block;
-    margin-bottom: 6px;
+    margin-bottom: var(--spacing-xs);
     font-weight: 500;
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    color: var(--color-text);
 }
 
 .form-group input,
 .form-group select {
     width: 100%;
-    padding: 12px 16px;
+    padding: var(--spacing-sm) var(--spacing-md);
     font-family: inherit;
     font-size: 16px; /* Prevent iOS zoom */
-    line-height: 1.4;
+    line-height: 1.5;
     color: var(--color-text);
-    background-color: var(--color-bg-grouped);
-    border: none;
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    transition: box-shadow var(--transition-fast);
-    -webkit-appearance: none;
-    appearance: none;
-}
-
-.form-group select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238e8e93' stroke-width='2' fill='none'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 16px center;
-    padding-right: 40px;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
-    box-shadow: 0 0 0 3px var(--color-primary-ultra-light), inset 0 0 0 1px var(--color-primary);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .form-group input:invalid {
-    box-shadow: inset 0 0 0 1px var(--color-danger);
+    border-color: var(--color-danger);
 }
 
 /* ============================================
@@ -887,14 +798,14 @@ body {
     overflow-y: auto;
     margin: var(--spacing-md) 0;
     padding: var(--spacing-sm);
-    background-color: var(--color-bg-grouped);
+    background-color: var(--color-bg);
     border-radius: var(--radius-md);
 }
 
 .old-weeks-list li {
-    padding: 6px 10px;
+    padding: var(--spacing-xs) var(--spacing-sm);
     font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
+    color: var(--color-text-light);
 }
 
 .warning-text {
@@ -904,26 +815,23 @@ body {
 }
 
 /* ============================================
-   Toast Notification - iOS HUD style
+   Toast Notification
    ============================================ */
 .toast {
     position: fixed;
-    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom));
     left: 50%;
-    transform: translateX(-50%) translateY(120px);
-    padding: 12px 24px;
-    background-color: rgba(28, 28, 30, 0.92);
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
+    transform: translateX(-50%) translateY(100px);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background-color: var(--color-text);
     color: white;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     font-weight: 500;
-    font-size: var(--font-size-sm);
     z-index: 2000;
     opacity: 0;
-    transition: transform var(--transition-spring), opacity var(--transition-base);
-    max-width: calc(100% - 32px);
+    transition: transform var(--transition-base), opacity var(--transition-base);
+    max-width: calc(100% - var(--spacing-xl));
     text-align: center;
 }
 
@@ -933,15 +841,15 @@ body {
 }
 
 .toast.toast-success {
-    background-color: rgba(52, 199, 89, 0.92);
+    background-color: var(--color-success);
 }
 
 .toast.toast-error {
-    background-color: rgba(255, 59, 48, 0.92);
+    background-color: var(--color-danger);
 }
 
 .toast.toast-warning {
-    background-color: rgba(255, 149, 0, 0.92);
+    background-color: var(--color-warning);
 }
 
 /* ============================================
@@ -953,7 +861,7 @@ body {
     }
     
     .app-header h1 {
-        font-size: var(--font-size-3xl);
+        font-size: var(--font-size-2xl);
     }
     
     .action-buttons {
@@ -963,7 +871,7 @@ body {
     .week-days {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
+        gap: var(--spacing-md);
     }
     
     .day-card.full-width {
@@ -973,36 +881,13 @@ body {
     .export-buttons {
         grid-template-columns: repeat(4, 1fr);
     }
-
-    /* On desktop, modals are centered cards */
-    .modal {
-        align-items: center;
-        padding: var(--spacing-md);
-    }
-
-    .modal-content {
-        border-radius: var(--radius-xl);
-        animation-name: modalSlideIn;
-    }
-
-    @keyframes modalSlideIn {
-        from {
-            transform: translateY(-20px) scale(0.97);
-            opacity: 0;
-        }
-        to {
-            transform: translateY(0) scale(1);
-            opacity: 1;
-        }
-    }
 }
 
 /* ============================================
    Print Styles
    ============================================ */
 @media print {
-    .btn, .modal, .toast, .backup-status, .export-buttons,
-    .install-banner, .app-footer, .add-entry-section {
+    .btn, .modal, .toast, .backup-status, .export-buttons {
         display: none !important;
     }
     
@@ -1030,6 +915,23 @@ body {
 }
 
 /* ============================================
+   Dark Mode (Optional - Future)
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+    /* Uncomment to enable dark mode
+    :root {
+        --color-bg: #1f2937;
+        --color-bg-card: #374151;
+        --color-bg-dark: #111827;
+        --color-text: #f9fafb;
+        --color-text-light: #d1d5db;
+        --color-text-muted: #9ca3af;
+        --color-border: #4b5563;
+    }
+    */
+}
+
+/* ============================================
    PWA Install Banner
    ============================================ */
 .install-banner {
@@ -1040,10 +942,9 @@ body {
     background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
     color: white;
     padding: var(--spacing-md);
-    padding-top: calc(var(--spacing-md) + env(safe-area-inset-top, 0px));
     z-index: 1001;
     box-shadow: var(--shadow-lg);
-    animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: slideDown 0.4s ease-out;
 }
 
 @keyframes slideDown {
@@ -1057,19 +958,8 @@ body {
     }
 }
 
-@keyframes slideUp {
-    from {
-        transform: translateY(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
 .install-banner-content {
-    max-width: 560px;
+    max-width: 600px;
     margin: 0 auto;
     display: flex;
     align-items: center;
@@ -1077,7 +967,7 @@ body {
 }
 
 .install-banner-icon {
-    font-size: 1.75rem;
+    font-size: 2rem;
     flex-shrink: 0;
 }
 
@@ -1089,45 +979,43 @@ body {
 }
 
 .install-banner-text strong {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-base);
     font-weight: 600;
 }
 
 .install-banner-text span {
-    font-size: var(--font-size-xs);
-    opacity: 0.85;
+    font-size: var(--font-size-sm);
+    opacity: 0.9;
 }
 
 .btn-install-banner {
     background: white;
     color: var(--color-primary);
-    font-weight: 700;
-    padding: 8px 20px;
+    font-weight: 600;
+    padding: var(--spacing-sm) var(--spacing-lg);
     border-radius: var(--radius-full);
     white-space: nowrap;
     flex-shrink: 0;
-    font-size: var(--font-size-sm);
 }
 
 .btn-install-banner:hover {
     background: var(--color-bg);
-    transform: scale(1.03);
+    transform: scale(1.05);
 }
 
 .btn-install-close {
     background: transparent;
     color: white;
-    font-size: 1.1rem;
-    padding: 4px;
+    font-size: 1.2rem;
+    padding: var(--spacing-xs);
     min-width: auto;
     min-height: auto;
-    opacity: 0.7;
+    opacity: 0.8;
 }
 
 .btn-install-close:hover {
     opacity: 1;
-    background: rgba(255,255,255,0.15);
-    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
 }
 
 /* iOS Install Instructions */
@@ -1136,14 +1024,23 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
-    background: rgba(28, 28, 30, 0.95);
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
+    background: linear-gradient(135deg, #333 0%, #111 100%);
     color: white;
     padding: var(--spacing-lg);
     z-index: 1001;
     text-align: center;
-    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .ios-install-hint p {
@@ -1156,7 +1053,7 @@ body {
 }
 
 .ios-install-hint .btn-close-ios {
-    background: rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.2);
     color: white;
     margin-top: var(--spacing-md);
 }
@@ -1170,9 +1067,9 @@ body {
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
-    padding: 14px 16px;
-    margin-bottom: 8px;
-    background: var(--color-bg-grouped);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    background: var(--color-bg);
     border-radius: var(--radius-md);
 }
 
@@ -1180,44 +1077,42 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     background: var(--color-primary);
     color: white;
     border-radius: 50%;
     font-weight: 700;
-    font-size: var(--font-size-sm);
     flex-shrink: 0;
 }
 
 .ios-step span:nth-child(2) {
     flex: 1;
-    font-size: var(--font-size-sm);
 }
 
 .ios-icon-large {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     flex-shrink: 0;
 }
 
 /* App Footer */
 .app-footer {
     text-align: center;
-    padding: var(--spacing-lg) var(--spacing-md) var(--spacing-md);
+    padding: var(--spacing-lg) var(--spacing-md);
     margin-top: var(--spacing-md);
-    border-top: 0.5px solid var(--color-separator);
+    border-top: 1px solid var(--color-border);
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--spacing-sm);
 }
 
 .install-help-link {
     color: var(--color-primary);
     text-decoration: none;
     font-weight: 600;
-    font-size: var(--font-size-sm);
-    padding: 8px 16px;
-    border-radius: var(--radius-sm);
+    font-size: var(--font-size-base);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
     transition: all 0.2s ease;
 }
 
@@ -1227,7 +1122,7 @@ body {
 }
 
 .app-version {
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-sm);
     color: var(--color-text-muted);
 }
 

@@ -6,7 +6,7 @@
  */
 
 import { WeekData } from '../models/WeekData.js';
-import { TimeEntry } from '../models/TimeEntry.js';
+import { TimeEntry, ABSENT_HOURS } from '../models/TimeEntry.js';
 import { StorageManager } from '../storage/StorageManager.js';
 import { UIManager } from '../views/UIManager.js';
 import { ModalManager, modalManager } from '../views/ModalManager.js';
@@ -362,12 +362,13 @@ export class AppController {
             if (!confirm) return;
         }
 
-        // Aggiungi entry assente
-        const entry = TimeEntry.createAssente();
+        // Aggiungi entry assente (con ore corrette in base al giorno)
+        const date = parseDateISO(dateKey);
+        const entry = TimeEntry.createAssente(isFriday(date));
         this.currentWeekData.addEntry(dateKey, entry);
 
         await this.saveCurrentWeek();
-        this.ui.showToast('Assenza registrata', 'success');
+        this.ui.showToast(`Assenza registrata (${entry.hours}h)`, 'success');
     }
 
     /**
@@ -424,7 +425,8 @@ export class AppController {
             if (result.type === 'smart') {
                 updates.hours = timeCalculator.getSmartHours(result.date);
             } else if (result.type === 'assente') {
-                updates.hours = 0;
+                updates.hours = isFriday(parseDateISO(result.date))
+                    ? ABSENT_HOURS.FRIDAY : ABSENT_HOURS.DEFAULT;
             }
 
             this.currentWeekData.updateEntry(result.date, result.index, updates);
@@ -472,7 +474,7 @@ export class AppController {
         if (result.type === 'smart') {
             entry = TimeEntry.createSmart(isFriday(selectedDate));
         } else if (result.type === 'assente') {
-            entry = TimeEntry.createAssente();
+            entry = TimeEntry.createAssente(isFriday(selectedDate));
         } else {
             if (result.type === 'entrata') {
                 entry = TimeEntry.createEntrata(result.time);

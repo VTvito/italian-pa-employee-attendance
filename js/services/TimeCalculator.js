@@ -53,10 +53,12 @@ export class TimeCalculator {
         }
 
         // Calcola ore da coppie entrata/uscita
-        const { workedMinutes, hasIncomplete } = this.calculatePairMinutes(entries);
+        const { workedMinutes, hasIncomplete, pairCount } = this.calculatePairMinutes(entries);
 
-        // Applica pausa automatica se necessario
-        const pauseMinutes = this.shouldApplyPause(workedMinutes, dateKey) ? CONFIG.PAUSE_MINUTES : 0;
+        // Applica pausa automatica SOLO se c'è una singola coppia.
+        // Se ci sono 2+ coppie, la pausa è già reale (uscita/rientro) e non va detratta.
+        const pauseMinutes = (pairCount <= 1 && this.shouldApplyPause(workedMinutes, dateKey))
+            ? CONFIG.PAUSE_MINUTES : 0;
         const netMinutes = Math.max(0, workedMinutes - pauseMinutes);
 
         return {
@@ -71,7 +73,7 @@ export class TimeCalculator {
     /**
      * Calcola i minuti da coppie entrata/uscita
      * @param {Array} entries - Array di entry
-     * @returns {{workedMinutes: number, hasIncomplete: boolean}}
+     * @returns {{workedMinutes: number, hasIncomplete: boolean, pairCount: number}}
      */
     calculatePairMinutes(entries) {
         let workedMinutes = 0;
@@ -100,7 +102,7 @@ export class TimeCalculator {
             }
         }
 
-        return { workedMinutes, hasIncomplete };
+        return { workedMinutes, hasIncomplete, pairCount: pairs };
     }
 
     /**

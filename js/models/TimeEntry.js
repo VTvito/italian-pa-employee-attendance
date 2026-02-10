@@ -16,9 +16,12 @@ export const SMART_HOURS = {
 };
 
 /**
- * Ore predefinite per Assente
+ * Ore predefinite per Assente (= giornata completa)
  */
-export const ABSENT_HOURS = 0;
+export const ABSENT_HOURS = {
+    DEFAULT: 7.5,  // Lunedì-Giovedì (uguale a presenza)
+    FRIDAY: 6      // Venerdì
+};
 
 /**
  * Classe che rappresenta una singola registrazione
@@ -59,7 +62,7 @@ export class TimeEntry {
             return isFriday ? SMART_HOURS.FRIDAY : SMART_HOURS.DEFAULT;
         }
         if (type === 'assente') {
-            return ABSENT_HOURS;
+            return isFriday ? ABSENT_HOURS.FRIDAY : ABSENT_HOURS.DEFAULT;
         }
         return 0;
     }
@@ -237,10 +240,16 @@ export class TimeEntry {
      * Crea un'entry di tipo Assente
      * @returns {TimeEntry}
      */
-    static createAssente() {
+    /**
+     * Crea un'entry di tipo Assente
+     * L'assenza conta come giornata lavorativa completa per il conteggio settimanale
+     * @param {boolean} [isFriday=false] - Se è venerdì
+     * @returns {TimeEntry}
+     */
+    static createAssente(isFriday = false) {
         return new TimeEntry({
             type: 'assente',
-            hours: ABSENT_HOURS
+            hours: isFriday ? ABSENT_HOURS.FRIDAY : ABSENT_HOURS.DEFAULT
         });
     }
 }

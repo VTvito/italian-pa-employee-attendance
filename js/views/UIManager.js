@@ -31,6 +31,7 @@ export class UIManager {
      */
     constructor(options = {}) {
         this.callbacks = options;
+        this.hasShownEditHintToast = false;
         
         // Riferimenti DOM
         this.elements = {
@@ -156,7 +157,9 @@ export class UIManager {
         
         // Chiave localStorage per tracciare dismissioni
         const INSTALL_DISMISSED_KEY = 'pwa_install_dismissed';
-        const INSTALL_DISMISSED_EXPIRES = 24 * 60 * 60 * 1000; // 24 ore (ridotto da 7 giorni)
+        const INSTALL_DISMISSED_EXPIRES = 12 * 60 * 60 * 1000; // 12 ore
+        const IOS_MODAL_SHOWN_KEY = 'ios_install_modal_shown';
+        const IOS_MODAL_SHOWN_EXPIRES = 24 * 60 * 60 * 1000; // 24 ore
 
         /**
          * Controlla se l'utente ha già chiuso il banner di recente
@@ -166,6 +169,13 @@ export class UIManager {
             if (!dismissed) return false;
             const dismissedTime = parseInt(dismissed, 10);
             return (Date.now() - dismissedTime) < INSTALL_DISMISSED_EXPIRES;
+        };
+
+        const wasIOSModalShownRecently = () => {
+            const shown = localStorage.getItem(IOS_MODAL_SHOWN_KEY);
+            if (!shown) return false;
+            const shownTime = parseInt(shown, 10);
+            return (Date.now() - shownTime) < IOS_MODAL_SHOWN_EXPIRES;
         };
 
         /**
@@ -206,8 +216,9 @@ export class UIManager {
             if (installBanner && (forceShow || !wasDismissedRecently()) && !isStandalone()) {
                 // Adatta il messaggio al dispositivo
                 if (isIOS()) {
-                    installBannerHint.textContent = 'Aggiungi l\'app alla schermata Home';
-                    installBannerBtn.textContent = 'Scopri come';
+                    installBannerHint.textContent = 'Su iPhone: Safari → Condividi → Aggiungi a Home';
+                    installBannerBtn.textContent = 'Guida iPhone';
+                    installBannerBtn.style.display = 'block';
                 } else if (!deferredPrompt) {
                     // Browser senza supporto nativo - mostra comunque info utili
                     installBannerHint.textContent = 'Usa il menu del browser per installare';
@@ -252,8 +263,21 @@ export class UIManager {
         
         // Se l'app non è già installata e l'utente non ha dismissato di recente
         if (!isStandalone() && !wasDismissedRecently()) {
-            // Mostra il banner dopo un breve delay per non essere troppo invasivo
-            setTimeout(() => showInstallBanner(), 2000);
+            const initialDelay = isIOS() ? 900 : 2000;
+            setTimeout(() => showInstallBanner(), initialDelay);
+
+            if (isIOS() && !wasIOSModalShownRecently()) {
+                setTimeout(() => {
+                    showIOSModal();
+                    localStorage.setItem(IOS_MODAL_SHOWN_KEY, Date.now().toString());
+                }, 1500);
+            }
+        }
+
+        // iOS non espone beforeinstallprompt: mostra CTA sempre visibile in header
+        if (installBtn && isIOS() && !isStandalone()) {
+            installBtn.style.display = 'inline-flex';
+            installBtn.textContent = '📲 Guida iPhone';
         }
 
         // Evento: prompt installazione disponibile (Chrome, Edge, etc.)
@@ -508,9 +532,6 @@ export class UIManager {
     createEntryItem(entry, dateKey, index) {
         const item = document.createElement('div');
         item.className = 'entry-item';
-        item.setAttribute('role', 'button');
-        item.setAttribute('tabindex', '0');
-        item.setAttribute('aria-label', `Modifica ${entry.type}`);
 
         // Gestisci correttamente il display value
         let displayValue;
@@ -530,19 +551,31 @@ export class UIManager {
                 <span class="entry-time">${sanitizeString(displayValue)}</span>
                 <span class="entry-type ${typeClass}">${typeLabel}</span>
             </div>
-            <button class="entry-edit-btn" aria-label="Modifica">✏️</button>
+            <button type="button" class="entry-edit-btn" aria-label="Correggi registrazione" title="Solo correzione manuale">Correggi</button>
         `;
 
-        // Click handler per modifica
-        const handleClick = () => {
+        const editBtn = item.querySelector('.entry-edit-btn');
+        const handleEdit = () => {
             this.callbacks.onEditEntry?.(dateKey, index, entry);
         };
 
-        item.addEventListener('click', handleClick);
+        editBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleEdit();
+        });
+
+        item.addEventListener('click', () => {
+            if (this.hasShownEditHintToast) return;
+            this.hasShownEditHintToast = true;
+            this.showToast('Per timbrare usa i pulsanti Entrata/Uscita in alto. "Correggi" serve solo per modifiche manuali.', 'info');
+        });
+
         item.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
+                if (this.hasShownEditHintToast) return;
                 e.preventDefault();
-                handleClick();
+                this.hasShownEditHintToast = true;
+                this.showToast('Usa i pulsanti automatici in alto; modifica solo in caso di correzione.', 'info');
             }
         });
 

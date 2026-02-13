@@ -1,4 +1,4 @@
-# ⏰ Orari Lavoro PA
+# ⏰ Timbra PA
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![PWA Ready](https://img.shields.io/badge/PWA-Ready-brightgreen.svg)](https://web.dev/progressive-web-apps/)
@@ -13,9 +13,9 @@
 
 ---
 
-## 🎯 Perché Orari Lavoro PA?
+## 🎯 Perché Timbra PA?
 
-| ❌ Altre App | ✅ Orari Lavoro PA |
+| ❌ Altre App | ✅ Timbra PA |
 |-------------|-------------------|
 | Richiedono account | **Nessuna registrazione** |
 | Dati su server esterni | **Dati solo sul TUO dispositivo** |
@@ -51,9 +51,9 @@
 - **Shortcut rapide**: tieni premuta l'icona dell'app e scegli "Entrata" o "Uscita" per timbrare subito
 
 ### 📤 Export Dati
-- **JSON**: backup completo importabile
+- **JSON**: backup reale, scaricabile e importabile
 - **CSV/Excel**: per elaborazioni e report
-- **Backup automatico** ogni 24h su storage locale
+- **Nessun backup cloud automatico**: salvi tu il file quando vuoi
 
 ---
 
@@ -65,7 +65,7 @@
 │                                                     │
 │   ┌───────────────┐    ┌──────────────────────┐   │
 │   │ localStorage  │    │     IndexedDB        │   │
-│   │  (Primario)   │    │     (Backup)         │   │
+│   │  (Primario)   │    │  (Copia locale app)  │   │
 │   └───────────────┘    └──────────────────────┘   │
 │                                                     │
 │   ✅ Dati salvati SOLO qui                         │
@@ -82,9 +82,12 @@
 
 | Storage | Cosa Contiene | Limite | Persistenza |
 |---------|--------------|--------|-------------|
-| **localStorage** | Dati settimanali, config | ~5 MB | Permanente |
-| **IndexedDB** | Backup automatici | ~50+ MB | Permanente |
-| **Export JSON** | File scaricabile | Illimitato | Tuo controllo |
+| **localStorage** | Dati settimanali | ~5 MB | Locale browser |
+| **IndexedDB** | Copia locale tecnica dell'app | ~50+ MB | Locale browser |
+| **Export JSON** | Backup reale scaricabile/importabile | Illimitato | Tuo controllo |
+
+> ℹ️ **Importante**: se cancelli i dati del browser/sito, localStorage e IndexedDB possono andare persi.
+> Per sicurezza usa periodicamente **Esporta Backup JSON**.
 
 > ⚠️ **Nota iOS**: Safari può eliminare i dati PWA dopo 7 giorni di inutilizzo.  
 > **Soluzione**: Apri l'app almeno 1 volta a settimana o esporta periodicamente i dati.
@@ -94,7 +97,7 @@
 ## 🚀 Inizia Subito
 
 ### Usa Online (Nessuna Installazione)
-👉 **[Apri Orari Lavoro PA](https://vtvito.github.io/italian-pa-employee-attendance/)**
+👉 **[Apri Timbra PA](https://vtvito.github.io/italian-pa-employee-attendance/)**
 
 ### Installa come App
 

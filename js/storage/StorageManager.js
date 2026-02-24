@@ -8,6 +8,7 @@
 import { LocalStorageAdapter } from './LocalStorageAdapter.js';
 import { IndexedDBAdapter } from './IndexedDBAdapter.js';
 import { eventBus, EVENTS } from '../utils/EventBus.js';
+import { parseWeekKey, getWeekStartDate } from '../utils/DateUtils.js';
 
 const OLD_DATA_CHECK_DAYS = 30;   // Controllo dati vecchi ogni N giorni
 const OLD_DATA_THRESHOLD_MONTHS = 3; // Soglia per dati "vecchi"
@@ -95,11 +96,20 @@ export class StorageManager {
 
     /**
      * Carica tutti i dati
+     * localStorage è il primary storage: si legge da esso per primo.
+     * Se vuoto, si prova IndexedDB come fallback.
      * @returns {Promise<Object>}
      */
     async loadAllData() {
         try {
-            // Prova prima IndexedDB
+            // Leggi prima da localStorage (primary storage)
+            const lsData = await this.localStorage.loadAllData();
+            if (Object.keys(lsData).length > 0) {
+                eventBus.emit(EVENTS.DATA_LOADED, { source: 'localStorage' });
+                return lsData;
+            }
+
+            // Fallback a IndexedDB se localStorage è vuoto
             if (this.useIndexedDB && this.indexedDB.isReady()) {
                 const idbData = await this.indexedDB.loadAllData();
                 if (Object.keys(idbData).length > 0) {
@@ -108,9 +118,7 @@ export class StorageManager {
                 }
             }
 
-            // Fallback a localStorage
-            const lsData = await this.localStorage.loadAllData();
-            eventBus.emit(EVENTS.DATA_LOADED, { source: 'localStorage' });
+            // Entrambi gli storage sono vuoti: ritorna oggetto vuoto
             return lsData;
         } catch (e) {
             console.error('Errore caricamento:', e);
@@ -218,18 +226,15 @@ export class StorageManager {
         const oldWeeks = [];
         
         for (const weekKey of weekKeys) {
-            // Parse chiave settimana (es. "2026-W05")
-            const match = weekKey.match(/^(\d{4})-W(\d{2})$/);
-            if (!match) continue;
-
-            const year = parseInt(match[1]);
-            const week = parseInt(match[2]);
-
-            // Approssima la data della settimana
-            const weekDate = new Date(year, 0, 1 + (week - 1) * 7);
-            
-            if (weekDate < cutoffDate) {
-                oldWeeks.push(weekKey);
+            try {
+                const { year, week } = parseWeekKey(weekKey);
+                // Usa il lunedì ISO della settimana come data di riferimento
+                const weekStartDate = getWeekStartDate(year, week);
+                if (weekStartDate < cutoffDate) {
+                    oldWeeks.push(weekKey);
+                }
+            } catch (e) {
+                // Chiave non valida, ignora
             }
         }
 
@@ -242,15 +247,28 @@ export class StorageManager {
      * @returns {Promise<number>} Numero di settimane eliminate
      */
     async cleanOldData(weekKeys) {
-        let deleted = 0;
+        if (!weekKeys || weekKeys.length === 0) return 0;
 
-        for (const weekKey of weekKeys) {
-            if (await this.deleteWeekData(weekKey)) {
-                deleted++;
+        try {
+            const allData = await this.loadAllData();
+            let deleted = 0;
+
+            for (const weekKey of weekKeys) {
+                if (weekKey in allData) {
+                    delete allData[weekKey];
+                    deleted++;
+                }
             }
-        }
 
-        return deleted;
+            if (deleted > 0) {
+                await this.saveAllData(allData);
+            }
+
+            return deleted;
+        } catch (e) {
+            console.error('Errore pulizia dati vecchi:', e);
+            return 0;
+        }
     }
 
     /**

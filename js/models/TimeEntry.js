@@ -238,10 +238,6 @@ export class TimeEntry {
 
     /**
      * Crea un'entry di tipo Assente
-     * @returns {TimeEntry}
-     */
-    /**
-     * Crea un'entry di tipo Assente
      * L'assenza conta come giornata lavorativa completa per il conteggio settimanale
      * @param {boolean} [isFriday=false] - Se è venerdì
      * @returns {TimeEntry}

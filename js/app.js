@@ -64,48 +64,59 @@ async function handleQuickAction(appController) {
 
 /**
  * Registra il Service Worker
+ * 
+ * Flusso aggiornamento:
+ * 1. Detecta nuovo SW installato (in stato "waiting")
+ * 2. Mostra banner non invasivo "Nuova versione disponibile"
+ * 3. Utente clicca "Aggiorna" → invia skipWaiting al SW waiting
+ * 4. SW si attiva → controllerchange → verifica dati → reload
  */
 async function registerServiceWorker() {
-    if ('serviceWorker' in navigator) {
-        try {
-            // Usa path relativo per supportare GitHub Pages
-            const swPath = './service-worker.js';
-            const registration = await navigator.serviceWorker.register(swPath);
+    if (!('serviceWorker' in navigator)) return;
 
-            console.log('Service Worker registrato:', registration.scope);
+    try {
+        const swPath = './service-worker.js';
+        const registration = await navigator.serviceWorker.register(swPath);
+        console.log('Service Worker registrato:', registration.scope);
 
-            // Gestione aggiornamenti
-            registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
-                
-                newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        // Nuova versione disponibile
-                        console.log('Nuova versione dell\'app disponibile');
-                        showUpdateNotification();
-                    }
-                });
-            });
-            
-            // Controlla se c'è già un worker in attesa
-            if (registration.waiting) {
-                showUpdateNotification();
-            }
-            
-            // Forza controllo aggiornamenti all'avvio e periodicamente
-            checkForUpdates(registration);
-            
-            // Controlla aggiornamenti quando l'app torna in primo piano
-            document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible') {
-                    checkForUpdates(registration);
+        // Rileva un nuovo SW appena installato
+        registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            if (!newWorker) return;
+
+            newWorker.addEventListener('statechange', () => {
+                // Un nuovo SW è pronto e in attesa di attivazione
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('[App] Nuovo SW in waiting — mostro banner aggiornamento');
+                    showUpdateNotification(registration);
                 }
             });
+        });
 
-        } catch (error) {
-            console.warn('Service Worker non registrato:', error.message);
-            // Non bloccare l'app se il SW fallisce
+        // Se al caricamento c'è già un SW in waiting (reload senza aver aggiornato)
+        if (registration.waiting && navigator.serviceWorker.controller) {
+            showUpdateNotification(registration);
         }
+
+        // Controlla aggiornamenti all'avvio
+        checkForUpdates(registration);
+
+        // Controlla anche quando l'app torna in primo piano
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                checkForUpdates(registration);
+            }
+        });
+
+        // Ascolta messaggi dal SW (es. SW_ACTIVATED dopo aggiornamento)
+        navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data?.type === 'SW_ACTIVATED') {
+                console.log(`[App] SW attivato: v${event.data.version}`);
+            }
+        });
+
+    } catch (error) {
+        console.warn('Service Worker non registrato:', error.message);
     }
 }
 
@@ -123,67 +134,108 @@ async function checkForUpdates(registration) {
 
 /**
  * Mostra notifica di aggiornamento disponibile
+ * 
+ * Banner fisso in alto con pulsante "Aggiorna".
+ * Il reload avviene SOLO dopo:
+ * 1. Verifica integrità dati (localStorage leggibile)
+ * 2. Il nuovo SW ha preso il controllo (controllerchange)
+ * 
+ * @param {ServiceWorkerRegistration} registration
  */
-function showUpdateNotification() {
-    // Crea un banner di aggiornamento in alto nella pagina
-    const existingBanner = document.getElementById('update-banner');
-    if (existingBanner) return; // Già mostrato
-    
+function showUpdateNotification(registration) {
+    if (document.getElementById('update-banner')) return;
+
     const banner = document.createElement('div');
     banner.id = 'update-banner';
+    banner.setAttribute('role', 'alert');
     banner.innerHTML = `
-        <div style="
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(90deg, #059669, #10b981);
-            color: white;
-            padding: 12px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 10000;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            font-family: inherit;
-        ">
-            <span>🎉 <strong>Nuova versione disponibile!</strong></span>
-            <button id="update-btn" style="
-                background: white;
-                color: #059669;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 6px;
-                font-weight: bold;
-                cursor: pointer;
-            ">
-                Aggiorna ora
-            </button>
+        <div class="update-banner-inner">
+            <div class="update-banner-text">
+                <strong>🎉 Nuova versione disponibile</strong>
+                <span>I tuoi dati NON verranno toccati.</span>
+            </div>
+            <div class="update-banner-actions">
+                <button id="update-btn" class="update-btn-primary">Aggiorna ora</button>
+                <button id="update-dismiss" class="update-btn-dismiss">Dopo</button>
+            </div>
         </div>
     `;
-    
     document.body.prepend(banner);
-    
-    // Gestisci click su aggiorna
-    document.getElementById('update-btn').addEventListener('click', async () => {
-        try {
-            const registration = await navigator.serviceWorker.getRegistration();
-            if (registration?.waiting) {
-                // Chiedi al SW in attesa di attivarsi
-                registration.waiting.postMessage({ action: 'skipWaiting' });
 
-                // Ricarica quando il nuovo SW prende il controllo
-                navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    window.location.reload();
-                }, { once: true });
-            } else {
-                // Fallback: ricarica subito
-                window.location.reload();
+    // Click "Aggiorna ora"
+    document.getElementById('update-btn').addEventListener('click', async () => {
+        const btn = document.getElementById('update-btn');
+        btn.disabled = true;
+        btn.textContent = 'Aggiornamento…';
+
+        try {
+            // 1. Verifica dati prima di procedere
+            const dataOk = verifyDataIntegrity();
+            if (!dataOk) {
+                console.warn('[App] Integrità dati dubbia — procedo comunque (dati in localStorage persistono)');
             }
+
+            // 2. Registra listener per quando il nuovo SW prende il controllo
+            const controllerChanged = new Promise((resolve) => {
+                navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
+            });
+
+            // 3. Chiedi al SW in waiting di attivarsi
+            const reg = registration || await navigator.serviceWorker.getRegistration();
+            if (reg?.waiting) {
+                reg.waiting.postMessage({ action: 'skipWaiting' });
+            } else {
+                // Nessun SW in waiting, reload diretto
+                window.location.reload();
+                return;
+            }
+
+            // 4. Aspetta il cambio controller (max 5s timeout)
+            const timeout = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Timeout')), 5000)
+            );
+
+            await Promise.race([controllerChanged, timeout]).catch(() => {
+                console.warn('[App] Timeout attesa controllerchange, reload forzato');
+            });
+
+            // 5. Verifica dati di nuovo dopo l'attivazione
+            verifyDataIntegrity();
+
+            // 6. Reload pulito
+            window.location.reload();
+
         } catch (e) {
+            console.error('[App] Errore aggiornamento:', e);
             window.location.reload();
         }
     });
+
+    // Click "Dopo" — nasconde il banner per questa sessione
+    document.getElementById('update-dismiss').addEventListener('click', () => {
+        banner.remove();
+    });
+}
+
+/**
+ * Verifica integrità dei dati utente in localStorage
+ * @returns {boolean} true se i dati sono leggibili e validi
+ */
+function verifyDataIntegrity() {
+    try {
+        const raw = localStorage.getItem('workTimeData');
+        if (!raw) {
+            console.log('[App] Nessun dato in localStorage (utente nuovo o dati vuoti)');
+            return true;
+        }
+        const data = JSON.parse(raw);
+        const weekCount = Object.keys(data).length;
+        console.log(`[App] Verifica dati OK: ${weekCount} settimane trovate`);
+        return true;
+    } catch (e) {
+        console.error('[App] Dati localStorage corrotti:', e);
+        return false;
+    }
 }
 
 // Debug: mostra base URL

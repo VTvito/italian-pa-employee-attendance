@@ -1004,6 +1004,85 @@ body {
 }
 
 /* ============================================
+   Update Banner - PWA version update prompt
+   ============================================ */
+#update-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10000;
+    animation: slideDownBanner 0.35s ease-out;
+}
+
+@keyframes slideDownBanner {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
+}
+
+.update-banner-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #059669, #10b981);
+    color: white;
+    font-family: inherit;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+
+.update-banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.update-banner-text strong {
+    font-size: var(--font-size-base);
+}
+
+.update-banner-text span {
+    font-size: var(--font-size-xs);
+    opacity: 0.9;
+}
+
+.update-banner-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.update-btn-primary {
+    background: white;
+    color: #059669;
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: opacity var(--transition-fast);
+}
+
+.update-btn-primary:disabled {
+    opacity: 0.7;
+    cursor: default;
+}
+
+.update-btn-dismiss {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+}
+
+/* ============================================
    Responsive - Desktop
    ============================================ */
 @media (min-width: 600px) {

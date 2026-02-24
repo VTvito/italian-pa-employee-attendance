@@ -478,15 +478,22 @@ const StorageTests = {
             await mgr.init();
 
             const testData = { '2026-W01': { '2026-01-05': [{ type: 'entrata', time: '08:00' }] } };
+            const previousValue = localStorage.getItem('workTimeData');
 
-            // Scrivi direttamente in localStorage (primary)
-            localStorage.setItem('workTimeData', JSON.stringify(testData));
+            try {
+                // Scrivi direttamente in localStorage (primary)
+                localStorage.setItem('workTimeData', JSON.stringify(testData));
 
-            const loaded = await mgr.loadAllData();
-            TestRunner.assert.true('2026-W01' in loaded, 'Dati da localStorage presenti');
-
-            // Ripristina
-            localStorage.removeItem('workTimeData');
+                const loaded = await mgr.loadAllData();
+                TestRunner.assert.true('2026-W01' in loaded, 'Dati da localStorage presenti');
+            } finally {
+                // Ripristina sempre il valore precedente
+                if (previousValue === null) {
+                    localStorage.removeItem('workTimeData');
+                } else {
+                    localStorage.setItem('workTimeData', previousValue);
+                }
+            }
         });
     }
 };

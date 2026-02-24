@@ -6,9 +6,9 @@
  */
 
 import { eventBus, EVENTS } from '../utils/EventBus.js';
-import { formatDateWithDay, formatDateISO, isToday, isFriday } from '../utils/DateUtils.js';
+import { formatDateWithDay, formatDateISO, isToday, isFriday, MONTH_NAMES } from '../utils/DateUtils.js';
 import { sanitizeString } from '../utils/Validators.js';
-import { timeCalculator } from '../services/TimeCalculator.js';
+import { timeCalculator, CONFIG } from '../services/TimeCalculator.js';
 
 /**
  * Classe per gestione UI
@@ -398,6 +398,9 @@ export class UIManager {
         // Aggiorna header settimana
         this.elements.weekLabel.textContent = `Settimana ${weekInfo.week}`;
         this.elements.yearLabel.textContent = weekInfo.year;
+
+        // Indicatore periodo settimana
+        this.renderWeekPeriod(weekInfo);
         
         // Badge settimana corrente
         if (weekInfo.isCurrent) {
@@ -408,6 +411,9 @@ export class UIManager {
 
         // Render giorni
         this.renderDays(weekInfo.days, weekData);
+
+        // Suggerimento uscita venerdì
+        this.renderFridayExitHint(weekInfo, weekData);
 
         // Calcola e mostra totali
         this.updateTotals(weekData);
@@ -682,6 +688,148 @@ export class UIManager {
         // Implementazione semplice: disabilita tutti i bottoni
         const buttons = ['entrataBtn', 'uscitaBtn', 'smartBtn', 'assenteBtn'];
         buttons.forEach(btn => this.setButtonEnabled(btn, !show));
+    }
+
+    /**
+     * Mostra indicatore periodo della settimana (es. "Inizio settimana", "Fine settimana")
+     * @param {Object} weekInfo - Info settimana
+     */
+    renderWeekPeriod(weekInfo) {
+        let periodEl = document.getElementById('weekPeriod');
+        if (!periodEl) {
+            periodEl = document.createElement('span');
+            periodEl.id = 'weekPeriod';
+            periodEl.className = 'week-period';
+            // Inserisci dopo il badge o yearLabel nel week-indicator
+            const indicator = document.querySelector('.week-indicator');
+            if (indicator) {
+                indicator.appendChild(periodEl);
+            }
+        }
+
+        // Calcola range date della settimana
+        const days = weekInfo.days || [];
+        if (days.length === 0) {
+            periodEl.textContent = '';
+            return;
+        }
+
+        const firstDay = days[0].date;
+        const lastDay = days[days.length - 1].date;
+        const firstDayNum = firstDay.getDate();
+        const lastDayNum = lastDay.getDate();
+        const monthStart = MONTH_NAMES[firstDay.getMonth()];
+        const monthEnd = MONTH_NAMES[lastDay.getMonth()];
+
+        // Range date (es. "24 Feb – 28 Feb" o "28 Feb – 4 Mar")
+        let dateRange;
+        if (firstDay.getMonth() === lastDay.getMonth()) {
+            dateRange = `${firstDayNum}–${lastDayNum} ${monthStart.slice(0, 3)}`;
+        } else {
+            dateRange = `${firstDayNum} ${monthStart.slice(0, 3)} – ${lastDayNum} ${monthEnd.slice(0, 3)}`;
+        }
+
+        // Se è la settimana corrente, mostra anche in che punto siamo
+        if (weekInfo.isCurrent) {
+            const todayDow = new Date().getDay(); // 0=dom, 1=lun, ..., 5=ven
+            let periodLabel;
+            if (todayDow === 1) {
+                periodLabel = '📅 Inizio settimana';
+            } else if (todayDow === 2 || todayDow === 3) {
+                periodLabel = '📅 Metà settimana';
+            } else if (todayDow === 4) {
+                periodLabel = '📅 Quasi fine settimana';
+            } else if (todayDow === 5) {
+                periodLabel = '🏁 Ultimo giorno';
+            } else {
+                periodLabel = '🌙 Weekend';
+            }
+            periodEl.textContent = `${dateRange} • ${periodLabel}`;
+        } else {
+            periodEl.textContent = dateRange;
+        }
+    }
+
+    /**
+     * Mostra suggerimento uscita anticipata venerdì con minuti extra accumulati
+     * @param {Object} weekInfo - Info settimana
+     * @param {Object} weekData - Dati settimana
+     */
+    renderFridayExitHint(weekInfo, weekData) {
+        // Rimuovi hint precedente se esiste
+        const existingHint = document.getElementById('fridayExitHint');
+        if (existingHint) existingHint.remove();
+
+        // Calcola suggerimento
+        const suggestion = timeCalculator.calculateFridayExitSuggestion(weekData);
+        if (!suggestion) return;
+
+        // Trova la card del venerdì
+        const dayCards = document.querySelectorAll('.day-card');
+        let fridayCard = null;
+        const days = weekInfo.days || [];
+        for (let i = 0; i < days.length; i++) {
+            if (days[i].dateKey === suggestion.fridayDateKey && dayCards[i]) {
+                fridayCard = dayCards[i];
+                break;
+            }
+        }
+        if (!fridayCard) return;
+
+        const extraFormatted = timeCalculator.formatDeltaMinutes(suggestion.extraMinutes);
+        const hint = document.createElement('div');
+        hint.id = 'fridayExitHint';
+        hint.className = 'friday-exit-hint';
+
+        if (suggestion.hasFridayComplete) {
+            // Venerdì già completato: non mostrare suggerimento
+            return;
+        }
+
+        if (suggestion.exitTime && suggestion.extraMinutes !== 0) {
+            // Ha entrata e ci sono extra: mostra suggerimento uscita
+            const adjustedHours = Math.floor(suggestion.fridayTargetMinutes / 60);
+            const adjustedMins = suggestion.fridayTargetMinutes % 60;
+            const adjustedFormatted = adjustedMins > 0 
+                ? `${adjustedHours}h ${adjustedMins}m` 
+                : `${adjustedHours}h`;
+
+            hint.innerHTML = `
+                <span class="friday-hint-icon">🕐</span>
+                <span class="friday-hint-text">
+                    Extra Lun–Gio: <strong>${extraFormatted}</strong> → 
+                    Target venerdì: <strong>${adjustedFormatted}</strong> → 
+                    Uscita suggerita: <strong>${suggestion.exitTime}</strong>
+                </span>
+            `;
+        } else if (suggestion.exitTime && suggestion.extraMinutes === 0) {
+            // Ha entrata ma zero extra
+            hint.innerHTML = `
+                <span class="friday-hint-icon">🕐</span>
+                <span class="friday-hint-text">
+                    Nessun extra accumulato → Uscita regolare: <strong>${suggestion.exitTime}</strong>
+                </span>
+            `;
+        } else if (!suggestion.hasFridayEntrata && suggestion.extraMinutes !== 0) {
+            // Non ha ancora timbrato entrata ma ci sono extra da scalare
+            const adjustedHours = Math.floor(suggestion.fridayTargetMinutes / 60);
+            const adjustedMins = suggestion.fridayTargetMinutes % 60;
+            const adjustedFormatted = adjustedMins > 0 
+                ? `${adjustedHours}h ${adjustedMins}m` 
+                : `${adjustedHours}h`;
+
+            hint.innerHTML = `
+                <span class="friday-hint-icon">💡</span>
+                <span class="friday-hint-text">
+                    Extra Lun–Gio: <strong>${extraFormatted}</strong> → 
+                    Target venerdì: <strong>${adjustedFormatted}</strong>
+                </span>
+            `;
+        } else {
+            return; // Nessun suggerimento utile
+        }
+
+        fridayCard.appendChild(hint);
     }
 }
 

@@ -53,12 +53,25 @@ export class TimeCalculator {
         }
 
         // Calcola ore da coppie entrata/uscita
-        const { workedMinutes, hasIncomplete, pairCount } = this.calculatePairMinutes(entries);
+        const { workedMinutes, hasIncomplete, pairCount, breakMinutes } = this.calculatePairMinutes(entries);
 
-        // Applica pausa automatica SOLO se c'è una singola coppia.
-        // Se ci sono 2+ coppie, la pausa è già reale (uscita/rientro) e non va detratta.
-        const pauseMinutes = (pairCount <= 1 && this.shouldApplyPause(workedMinutes, dateKey))
-            ? CONFIG.PAUSE_MINUTES : 0;
+        let pauseMinutes = 0;
+        const friday = isFriday(parseDateISO(dateKey));
+
+        if (!friday) {
+            if (pairCount <= 1) {
+                // Singola coppia: pausa automatica 30min se ore > 6
+                pauseMinutes = this.shouldApplyPause(workedMinutes, dateKey)
+                    ? CONFIG.PAUSE_MINUTES : 0;
+            } else {
+                // Multi-coppia: la pausa reale è il gap tra uscita e rientro.
+                // Se la pausa reale è < 30min, integra fino a 30min minimo.
+                if (breakMinutes < CONFIG.PAUSE_MINUTES) {
+                    pauseMinutes = CONFIG.PAUSE_MINUTES - breakMinutes;
+                }
+            }
+        }
+
         const netMinutes = Math.max(0, workedMinutes - pauseMinutes);
 
         return {
@@ -66,7 +79,8 @@ export class TimeCalculator {
             formatted: minutesToTime(netMinutes),
             hasIncomplete,
             grossMinutes: workedMinutes,
-            pauseApplied: pauseMinutes > 0
+            pauseApplied: pauseMinutes > 0,
+            breakMinutes: pairCount > 1 ? breakMinutes : (pauseMinutes > 0 ? CONFIG.PAUSE_MINUTES : 0)
         };
     }
 
@@ -78,6 +92,7 @@ export class TimeCalculator {
     calculatePairMinutes(entries) {
         let workedMinutes = 0;
         let hasIncomplete = false;
+        let breakMinutes = 0;
 
         // Separa entrate e uscite
         const entrate = entries.filter(e => e.type === 'entrata').map(e => e.time);
@@ -100,9 +115,18 @@ export class TimeCalculator {
                     workedMinutes += diff;
                 }
             }
+
+            // Calcola pausa tra coppie consecutive (gap tra uscita[i] e entrata[i+1])
+            if (i < pairs - 1) {
+                const exitMin = parseTimeToMinutes(uscite[i]);
+                const nextEntryMin = parseTimeToMinutes(entrate[i + 1]);
+                if (exitMin !== null && nextEntryMin !== null && nextEntryMin > exitMin) {
+                    breakMinutes += (nextEntryMin - exitMin);
+                }
+            }
         }
 
-        return { workedMinutes, hasIncomplete, pairCount: pairs };
+        return { workedMinutes, hasIncomplete, pairCount: pairs, breakMinutes };
     }
 
     /**
@@ -301,6 +325,69 @@ export class TimeCalculator {
             return `${sign}${hours}h`;
         }
         return `${sign}${hours}h ${mins}m`;
+    }
+
+    /**
+     * Calcola il suggerimento di uscita per l'ultimo giorno (venerdì)
+     * basandosi sui minuti extra accumulati lun-gio.
+     * @param {Object} weekEntries - Oggetto {dateKey: [entries]}
+     * @returns {{exitTime: string, extraMinutes: number, fridayTarget: number, fridayDateKey: string, hasFridayEntrata: boolean}|null}
+     */
+    calculateFridayExitSuggestion(weekEntries) {
+        const sortedDates = Object.keys(weekEntries).sort();
+        if (sortedDates.length === 0) return null;
+
+        // Trova il venerdì (ultimo giorno lavorativo)
+        const fridayDateKey = sortedDates.find(dk => isFriday(parseDateISO(dk)));
+        if (!fridayDateKey) return null;
+
+        // Calcola extra accumulati lun-gio (giorni prima del venerdì)
+        let extraMinutes = 0;
+        for (const dateKey of sortedDates) {
+            if (dateKey === fridayDateKey) continue;
+            const entries = weekEntries[dateKey];
+            if (!entries || entries.length === 0) continue;
+            const delta = this.calculateDayDelta(entries, dateKey);
+            if (delta && !delta.hasIncomplete) {
+                extraMinutes += delta.minutes;
+            }
+        }
+
+        // Verifica se venerdì ha un'entrata
+        const fridayEntries = weekEntries[fridayDateKey] || [];
+        const hasFridayEntrata = fridayEntries.some(e => e.type === 'entrata');
+        const hasFridayUscita = fridayEntries.some(e => e.type === 'uscita');
+        const isFridaySpecial = fridayEntries.length === 1 && 
+            (fridayEntries[0].type === 'smart' || fridayEntries[0].type === 'assente');
+
+        // Non suggerire se venerdì è smart/assente o ha già l'uscita completata
+        if (isFridaySpecial) return null;
+
+        const fridayTargetMinutes = this.hoursToMinutes(CONFIG.FRIDAY_TARGET_HOURS);
+        // Il target del venerdì può essere ridotto dai minuti extra accumulati
+        const adjustedTarget = Math.max(0, fridayTargetMinutes - extraMinutes);
+
+        // Se c'è un'entrata, calcola ora uscita
+        let exitTime = null;
+        if (hasFridayEntrata && !hasFridayUscita) {
+            const entrataEntry = fridayEntries.find(e => e.type === 'entrata');
+            if (entrataEntry) {
+                const entrataMin = parseTimeToMinutes(entrataEntry.time);
+                if (entrataMin !== null) {
+                    const exitMin = entrataMin + adjustedTarget;
+                    exitTime = minutesToTime(exitMin);
+                }
+            }
+        }
+
+        return {
+            exitTime,
+            extraMinutes,
+            fridayTargetMinutes: adjustedTarget,
+            fridayDateKey,
+            hasFridayEntrata,
+            hasFridayComplete: hasFridayUscita && hasFridayEntrata
+        };
     }
 }
 

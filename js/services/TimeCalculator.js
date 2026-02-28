@@ -56,19 +56,17 @@ export class TimeCalculator {
         const { workedMinutes, hasIncomplete, pairCount, breakMinutes } = this.calculatePairMinutes(entries);
 
         let pauseMinutes = 0;
-        const friday = isFriday(parseDateISO(dateKey));
 
-        if (!friday) {
-            if (pairCount <= 1) {
-                // Singola coppia: pausa automatica 30min se ore > 6
-                pauseMinutes = this.shouldApplyPause(workedMinutes, dateKey)
-                    ? CONFIG.PAUSE_MINUTES : 0;
-            } else {
-                // Multi-coppia: la pausa reale è il gap tra uscita e rientro.
-                // Se la pausa reale è < 30min, integra fino a 30min minimo.
-                if (breakMinutes < CONFIG.PAUSE_MINUTES) {
-                    pauseMinutes = CONFIG.PAUSE_MINUTES - breakMinutes;
-                }
+        // Pausa obbligatoria tutti i giorni (Lun–Ven) se ore > 6h
+        if (pairCount <= 1) {
+            // Singola coppia: pausa automatica 30min se ore > 6
+            pauseMinutes = this.shouldApplyPause(workedMinutes, dateKey)
+                ? CONFIG.PAUSE_MINUTES : 0;
+        } else {
+            // Multi-coppia: la pausa reale è il gap tra uscita e rientro.
+            // Se la pausa reale è < 30min, integra fino a 30min minimo.
+            if (breakMinutes < CONFIG.PAUSE_MINUTES) {
+                pauseMinutes = CONFIG.PAUSE_MINUTES - breakMinutes;
             }
         }
 
@@ -136,12 +134,7 @@ export class TimeCalculator {
      * @returns {boolean}
      */
     shouldApplyPause(workedMinutes, dateKey) {
-        // Nessuna pausa il venerdì
-        if (isFriday(parseDateISO(dateKey))) {
-            return false;
-        }
-
-        // Pausa solo se ore > 6
+        // Pausa obbligatoria tutti i giorni (incluso venerdì) se ore > 6h
         const workedHours = workedMinutes / 60;
         return workedHours > CONFIG.PAUSE_THRESHOLD_HOURS;
     }
@@ -368,13 +361,18 @@ export class TimeCalculator {
         const adjustedTarget = Math.max(0, fridayTargetMinutes - extraMinutes);
 
         // Se c'è un'entrata, calcola ora uscita
+        // Se il target netto > 6h, bisogna aggiungere 30min di pausa obbligatoria
         let exitTime = null;
         if (hasFridayEntrata && !hasFridayUscita) {
             const entrataEntry = fridayEntries.find(e => e.type === 'entrata');
             if (entrataEntry) {
                 const entrataMin = parseTimeToMinutes(entrataEntry.time);
                 if (entrataMin !== null) {
-                    const exitMin = entrataMin + adjustedTarget;
+                    let grossTarget = adjustedTarget;
+                    if (adjustedTarget > this.hoursToMinutes(CONFIG.PAUSE_THRESHOLD_HOURS)) {
+                        grossTarget += CONFIG.PAUSE_MINUTES;
+                    }
+                    const exitMin = entrataMin + grossTarget;
                     exitTime = minutesToTime(exitMin);
                 }
             }

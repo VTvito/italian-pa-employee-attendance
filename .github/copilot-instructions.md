@@ -54,11 +54,10 @@ js/
 ## Business Rules (CCNL Funzioni Locali)
 
 - Settimana lavorativa: **36 ore** (Lun–Ven)
-- Target giornaliero Lun–Gio: **7h 30m** — Venerdì: **6h** (no pausa)
-- Pausa pranzo minima: **30 minuti** (Lun–Gio, se ore > 6h)
+- Target giornaliero Lun–Gio: **7h 30m** — Venerdì: **6h**
+- Pausa pranzo minima: **30 minuti** (tutti i giorni, se ore lorde > 6h)
   - Singola coppia entrata/uscita: pausa automatica 30min dedotta
   - Multi-coppia (timbrature reali pausa): se break reale < 30min, differenza dedotta
-  - Venerdì: **mai** pausa applicata
 - Smart Working / Assente: sostituiscono l'intera giornata con ore fisse
 - Venerdì: l'app suggerisce l'ora di uscita anticipata calcolando gli extra Lun–Gio
 
@@ -108,6 +107,6 @@ git push origin main
 2. **skipWaiting**: NON va nel handler `install` — solo nel handler `message` su richiesta utente
 3. **iOS PWA**: l'icona e il nome vengono cachati all'installazione. Per aggiornarli l'utente deve rimuovere e reinstallare l'app
 4. **localStorage quota**: ~5MB. Comprimere dati se si cresce. Attualmente ~2KB per mese
-5. **Calcoli pause**: il venerdì NON ha pausa. La funzione `isFriday(parseDateISO(dateKey))` è il gate
+5. **Calcoli pause**: la pausa 30min si applica a TUTTI i giorni (incluso venerdì) quando ore lorde > 6h. `isFriday()` serve solo per determinare il target giornaliero (6h vs 7h30)
 6. **parseDateISO**: usa `new Date(year, month-1, day)` (locale), non `new Date(str)` (UTC mismatch)
 7. **git push fallisce**: fare sempre `git pull --rebase origin main` e riprovare

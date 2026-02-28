@@ -359,34 +359,7 @@ body {
     margin-bottom: var(--spacing-md);
 }
 
-/* Add Entry Section */
-.add-entry-section {
-    margin-bottom: var(--spacing-lg);
-}
-
-.btn-add-entry {
-    width: 100%;
-    padding: 14px;
-    background: var(--color-bg-card);
-    border: 2px dashed var(--color-border);
-    border-radius: var(--radius-lg);
-    color: var(--color-text-light);
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-
-.btn-add-entry:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-    background: var(--color-primary-ultra-light);
-}
-
-.btn-add-entry:focus {
-    outline: 3px solid var(--color-primary-light);
-    outline-offset: 2px;
-}
+/* Add Entry Section - rimossa, ora si aggiunge toccando il giorno */
 
 /* ============================================
    Week Days List - iOS grouped list
@@ -1140,7 +1113,7 @@ body {
    ============================================ */
 @media print {
     .btn, .modal, .toast, .backup-status, .export-buttons,
-    .install-banner, .app-footer, .add-entry-section {
+    .install-banner, .app-footer {
         display: none !important;
     }
     

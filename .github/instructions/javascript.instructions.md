@@ -45,7 +45,7 @@ Lo storage passa SEMPRE da `StorageManager`. Mai chiamare `localStorage` o `inde
 3. Pausa (solo Lun–Gio):
    - 1 coppia + ore > 6h → deduce 30min automatici
    - 2+ coppie → calcola break reale → se < 30min, deduce la differenza
-4. Venerdì: mai pausa
+4. Venerdì: pausa se ore lorde > 6h (come tutti gli altri giorni)
 
 ## Validazione Pre-Commit
 

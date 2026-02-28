@@ -41,8 +41,8 @@ Questo documento raccoglie le lezioni apprese durante lo sviluppo agentico dell'
 ### Problema: Pausa pranzo non applicata con timbrature reali
 - **Causa**: La logica originale applicava la pausa 30min SOLO con una singola coppia entrata/uscita, ma la ignorava completamente con 2+ coppie (timbrature reali della pausa).
 - **Soluzione**: Con multi-coppia, calcolare il gap tra uscita[i] e entrata[i+1]. Se il break totale < 30min, dedurre `30 - break_reale` dal tempo lavorato. Se ≥ 30min, nessuna deduzione aggiuntiva.
-- **Eccezione**: Il venerdì NON ha MAI pausa, nemmeno con multi-coppia.
-- **Gate**: `isFriday(parseDateISO(dateKey))` — SEMPRE verificare prima di applicare pause.
+- **Eccezione**: Il venerdì applica la pausa solo se le ore lorde superano le 6h, come tutti gli altri giorni.
+- **Gate**: `isFriday(parseDateISO(dateKey))` — utile per determinare il target giornaliero (6h vs 7h30), ma NON per escludere la pausa.
 
 ### Problema: Date UTC vs Local
 - **Causa**: `new Date('2026-02-24')` crea una data UTC (mezzanotte UTC, che in IT è 23:00 del giorno prima in inverno).

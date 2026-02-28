@@ -48,7 +48,7 @@ export class UIManager {
             uscitaBtn: document.getElementById('uscitaBtn'),
             smartBtn: document.getElementById('smartBtn'),
             assenteBtn: document.getElementById('assenteBtn'),
-            addEntryBtn: document.getElementById('addEntryBtn'),
+
             prevWeekBtn: document.getElementById('prevWeekBtn'),
             nextWeekBtn: document.getElementById('nextWeekBtn'),
             exportJsonBtn: document.getElementById('exportJsonBtn'),
@@ -93,10 +93,8 @@ export class UIManager {
             callbacks.onAssente?.();
         });
 
-        // Add Entry button (per aggiungere su altri giorni)
-        elements.addEntryBtn?.addEventListener('click', () => {
-            callbacks.onAddEntry?.();
-        });
+        // Nota: il bottone standalone "Aggiungi su altro giorno" è stato rimosso.
+        // L'aggiunta si fa direttamente toccando il giorno desiderato.
 
         // Navigation
         elements.prevWeekBtn?.addEventListener('click', () => {
@@ -691,7 +689,7 @@ export class UIManager {
     }
 
     /**
-     * Mostra indicatore periodo della settimana (es. "Inizio settimana", "Fine settimana")
+     * Mostra indicatore periodo della settimana (Lun–Dom completa)
      * @param {Object} weekInfo - Info settimana
      */
     renderWeekPeriod(weekInfo) {
@@ -707,44 +705,48 @@ export class UIManager {
             }
         }
 
-        // Calcola range date della settimana
+        // Calcola range date della settimana completa (Lun–Dom)
         const days = weekInfo.days || [];
         if (days.length === 0) {
             periodEl.textContent = '';
             return;
         }
 
-        const firstDay = days[0].date;
-        const lastDay = days[days.length - 1].date;
-        const firstDayNum = firstDay.getDate();
-        const lastDayNum = lastDay.getDate();
-        const monthStart = MONTH_NAMES[firstDay.getMonth()];
-        const monthEnd = MONTH_NAMES[lastDay.getMonth()];
+        // Lunedì è il primo giorno lavorativo
+        const monday = days[0].date;
+        // Calcola Domenica = Lunedì + 6 giorni
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
 
-        // Range date (es. "24 Feb – 28 Feb" o "28 Feb – 4 Mar")
+        const firstDayNum = monday.getDate();
+        const lastDayNum = sunday.getDate();
+        const monthStart = MONTH_NAMES[monday.getMonth()];
+        const monthEnd = MONTH_NAMES[sunday.getMonth()];
+
+        // Range date completo Lun–Dom (es. "24 Feb – 2 Mar")
         let dateRange;
-        if (firstDay.getMonth() === lastDay.getMonth()) {
+        if (monday.getMonth() === sunday.getMonth()) {
             dateRange = `${firstDayNum}–${lastDayNum} ${monthStart.slice(0, 3)}`;
         } else {
             dateRange = `${firstDayNum} ${monthStart.slice(0, 3)} – ${lastDayNum} ${monthEnd.slice(0, 3)}`;
         }
 
-        // Se è la settimana corrente, mostra anche in che punto siamo
+        // Se è la settimana corrente, mostra in che punto siamo (senza emoji calendario)
         if (weekInfo.isCurrent) {
             const todayDow = new Date().getDay(); // 0=dom, 1=lun, ..., 5=ven
             let periodLabel;
             if (todayDow === 1) {
-                periodLabel = '📅 Inizio settimana';
+                periodLabel = 'Inizio settimana';
             } else if (todayDow === 2 || todayDow === 3) {
-                periodLabel = '📅 Metà settimana';
+                periodLabel = 'Metà settimana';
             } else if (todayDow === 4) {
-                periodLabel = '📅 Quasi fine settimana';
+                periodLabel = 'Quasi fine settimana';
             } else if (todayDow === 5) {
-                periodLabel = '🏁 Ultimo giorno';
+                periodLabel = 'Ultimo giorno lavorativo';
             } else {
-                periodLabel = '🌙 Weekend';
+                periodLabel = 'Weekend';
             }
-            periodEl.textContent = `${dateRange} • ${periodLabel}`;
+            periodEl.textContent = `${dateRange} · ${periodLabel}`;
         } else {
             periodEl.textContent = dateRange;
         }

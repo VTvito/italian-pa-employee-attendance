@@ -54,9 +54,9 @@ export class ModalManager {
     /**
      * Setup listeners per una modale
      * @param {string} name - Nome modale
-     * @param {HTMLElement} modal - Elemento modale
+     * @param {HTMLElement} element - Elemento modale
      */
-    setupModalListeners(modal, element) {
+    setupModalListeners(name, element) {
         // Click su overlay per chiudere
         element.addEventListener('click', (e) => {
             if (e.target === element) {

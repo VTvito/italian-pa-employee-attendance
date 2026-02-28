@@ -66,9 +66,14 @@ export function validateDate(date) {
         return { valid: false, error: 'Formato data non valido (YYYY-MM-DD)' };
     }
 
-    // Verifica che sia una data valida
-    const parsed = new Date(date);
-    if (isNaN(parsed.getTime())) {
+    // Verifica che sia una data valida senza overflow (es. 2026-02-30 → invalida)
+    const [year, month, day] = date.split('-').map(Number);
+    const parsed = new Date(year, month - 1, day);
+    if (
+        parsed.getFullYear() !== year ||
+        parsed.getMonth() !== month - 1 ||
+        parsed.getDate() !== day
+    ) {
         return { valid: false, error: 'Data non valida' };
     }
 

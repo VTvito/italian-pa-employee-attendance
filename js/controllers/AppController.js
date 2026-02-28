@@ -434,7 +434,7 @@ export class AppController {
         if (!result || result.action !== 'add') return;
 
         // Verifica se la data è nel weekend
-        const selectedDate = new Date(result.date);
+        const selectedDate = parseDateISO(result.date);
         const dayOfWeek = selectedDate.getDay();
         
         if (dayOfWeek === 0 || dayOfWeek === 6) {
@@ -497,7 +497,7 @@ export class AppController {
      * @returns {string}
      */
     formatDateShort(dateKey) {
-        const date = new Date(dateKey);
+        const date = parseDateISO(dateKey);
         return date.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
     }
 

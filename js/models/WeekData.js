@@ -8,6 +8,7 @@
 import { TimeEntry, SMART_HOURS } from './TimeEntry.js';
 import { 
     getWeekKey, 
+    getWeekNumber,
     getWorkWeekDates, 
     formatDateISO, 
     isFriday, 
@@ -316,8 +317,5 @@ export class WeekData {
         return new WeekData(year, week, data);
     }
 }
-
-// Import mancante per getWeekNumber
-import { getWeekNumber } from '../utils/DateUtils.js';
 
 export default WeekData;

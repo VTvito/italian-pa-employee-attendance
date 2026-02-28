@@ -179,6 +179,18 @@ const ValidatorsTests = {
             TestRunner.assert.false(Validators.validateDate('invalid').valid);
         });
 
+        await TestRunner.test('validateDate - date con overflow (fix bug)', () => {
+            // 30 febbraio non esiste: deve essere invalida
+            TestRunner.assert.false(Validators.validateDate('2026-02-30').valid, '30 feb invalida');
+            // 31 aprile non esiste
+            TestRunner.assert.false(Validators.validateDate('2026-04-31').valid, '31 apr invalida');
+            // Date al limite valide
+            TestRunner.assert.true(Validators.validateDate('2026-02-28').valid, '28 feb valida');
+            TestRunner.assert.true(Validators.validateDate('2024-02-29').valid, '29 feb 2024 (bisestile)');
+            // 29 feb anno non bisestile
+            TestRunner.assert.false(Validators.validateDate('2026-02-29').valid, '29 feb 2026 invalida');
+        });
+
         await TestRunner.test('validateEntryType - tipi validi', () => {
             TestRunner.assert.true(Validators.validateEntryType('entrata').valid);
             TestRunner.assert.true(Validators.validateEntryType('uscita').valid);
@@ -458,6 +470,30 @@ const StorageTests = {
 
         await TestRunner.test('IndexedDB - disponibilità', () => {
             TestRunner.assert.true(typeof indexedDB !== 'undefined');
+        });
+
+        await TestRunner.test('StorageManager - loadAllData preferisce localStorage (fix bug)', async () => {
+            const { StorageManager } = await import('./js/storage/StorageManager.js');
+            const mgr = new StorageManager();
+            await mgr.init();
+
+            const testData = { '2026-W01': { '2026-01-05': [{ type: 'entrata', time: '08:00' }] } };
+            const previousValue = localStorage.getItem('workTimeData');
+
+            try {
+                // Scrivi direttamente in localStorage (primary)
+                localStorage.setItem('workTimeData', JSON.stringify(testData));
+
+                const loaded = await mgr.loadAllData();
+                TestRunner.assert.true('2026-W01' in loaded, 'Dati da localStorage presenti');
+            } finally {
+                // Ripristina sempre il valore precedente
+                if (previousValue === null) {
+                    localStorage.removeItem('workTimeData');
+                } else {
+                    localStorage.setItem('workTimeData', previousValue);
+                }
+            }
         });
     }
 };

@@ -14,12 +14,12 @@ import { isFriday, parseDateISO } from '../utils/DateUtils.js';
 export const CONFIG = {
     WEEKLY_TARGET_HOURS: 36,           // Ore settimanali target
     WEEKLY_TARGET_MINUTES: 36 * 60,    // In minuti
-    PAUSE_MINUTES: 30,                 // Pausa automatica (30 min) lun-gio
+    PAUSE_MINUTES: 30,                 // Pausa automatica massima
     PAUSE_THRESHOLD_HOURS: 6,          // Soglia per applicare pausa
     SMART_HOURS_DEFAULT: 7.5,          // Ore Smart lun-gio
     SMART_HOURS_FRIDAY: 6,             // Ore Smart venerdì
     DAILY_TARGET_HOURS: 7.5,           // Ore giornaliere target lun-gio (7h30m)
-    FRIDAY_TARGET_HOURS: 6             // Ore target venerdì (6h, no pausa)
+    FRIDAY_TARGET_HOURS: 6             // Ore target venerdì
     // Verifica: 7.5 * 4 + 6 = 36h ✓
 };
 
@@ -53,32 +53,18 @@ export class TimeCalculator {
         }
 
         // Calcola ore da coppie entrata/uscita
-        const { workedMinutes, hasIncomplete, pairCount, breakMinutes } = this.calculatePairMinutes(entries);
+        const { workedMinutes, hasIncomplete } = this.calculatePairMinutes(entries);
 
-        let pauseMinutes = 0;
-
-        // Pausa obbligatoria tutti i giorni (Lun–Ven) se ore > 6h
-        if (pairCount <= 1) {
-            // Singola coppia: pausa automatica 30min se ore > 6
-            pauseMinutes = this.shouldApplyPause(workedMinutes, dateKey)
-                ? CONFIG.PAUSE_MINUTES : 0;
-        } else {
-            // Multi-coppia: la pausa reale è il gap tra uscita e rientro.
-            // Se la pausa reale è < 30min, integra fino a 30min minimo.
-            if (breakMinutes < CONFIG.PAUSE_MINUTES) {
-                pauseMinutes = CONFIG.PAUSE_MINUTES - breakMinutes;
-            }
-        }
-
-        const netMinutes = Math.max(0, workedMinutes - pauseMinutes);
+        const requiredPauseMinutes = this.getRequiredPauseMinutes(workedMinutes, dateKey);
+        const netMinutes = Math.max(0, workedMinutes - requiredPauseMinutes);
 
         return {
             minutes: netMinutes,
             formatted: minutesToTime(netMinutes),
             hasIncomplete,
             grossMinutes: workedMinutes,
-            pauseApplied: pauseMinutes > 0,
-            breakMinutes: pairCount > 1 ? breakMinutes : (pauseMinutes > 0 ? CONFIG.PAUSE_MINUTES : 0)
+            pauseApplied: requiredPauseMinutes > 0,
+            breakMinutes: requiredPauseMinutes
         };
     }
 
@@ -128,15 +114,28 @@ export class TimeCalculator {
     }
 
     /**
+     * Calcola la pausa totale richiesta in base al giorno e alle ore lorde
+     * @param {number} workedMinutes - Minuti lavorati
+     * @param {string} dateKey - Data in formato ISO
+     * @returns {number}
+     */
+    getRequiredPauseMinutes(workedMinutes, dateKey) {
+        if (isFriday(parseDateISO(dateKey))) {
+            const pauseThresholdMinutes = this.hoursToMinutes(CONFIG.PAUSE_THRESHOLD_HOURS);
+            return workedMinutes > pauseThresholdMinutes ? CONFIG.PAUSE_MINUTES : 0;
+        }
+
+        return workedMinutes > 0 ? CONFIG.PAUSE_MINUTES : 0;
+    }
+
+    /**
      * Determina se applicare la pausa automatica
      * @param {number} workedMinutes - Minuti lavorati
      * @param {string} dateKey - Data in formato ISO
      * @returns {boolean}
      */
     shouldApplyPause(workedMinutes, dateKey) {
-        // Pausa obbligatoria tutti i giorni (incluso venerdì) se ore > 6h
-        const workedHours = workedMinutes / 60;
-        return workedHours > CONFIG.PAUSE_THRESHOLD_HOURS;
+        return this.getRequiredPauseMinutes(workedMinutes, dateKey) > 0;
     }
 
     /**
@@ -240,8 +239,8 @@ export class TimeCalculator {
         }
 
         let targetMinutes = this.hoursToMinutes(targetHours);
-        if (includePause && targetHours > CONFIG.PAUSE_THRESHOLD_HOURS) {
-            targetMinutes += CONFIG.PAUSE_MINUTES;
+        if (includePause) {
+            targetMinutes += this.getRequiredPauseMinutes(targetMinutes, '1970-01-05');
         }
 
         const exitMinutes = entrataMinutes + targetMinutes;

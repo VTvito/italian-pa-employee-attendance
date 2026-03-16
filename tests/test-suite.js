@@ -280,7 +280,7 @@ const TimeCalculatorTests = {
             TestRunner.assert.equal(result.breakMinutes, 30);
         });
 
-        await TestRunner.test('calculateDayHours - multi-coppia lunedì ignora la pausa reale e scala 30 minuti', () => {
+        await TestRunner.test('calculateDayHours - multi-coppia lunedì non deduce extra se la pausa reale supera 30 minuti', () => {
             const entries = [
                 { type: 'entrata', time: '08:00' },
                 { type: 'uscita', time: '12:00' },
@@ -288,9 +288,22 @@ const TimeCalculatorTests = {
                 { type: 'uscita', time: '14:15' }
             ];
             const result = timeCalculator.calculateDayHours(entries, '2026-02-02'); // Lunedì
-            // 5h15m lorde con 1h di break reale -> pausa fissa 30m -> 4h45m nette
-            TestRunner.assert.equal(result.minutes, 285);
-            TestRunner.assert.equal(result.breakMinutes, 30);
+            // 5h15m nette già al netto di 1h di pausa reale -> nessuna deduzione aggiuntiva
+            TestRunner.assert.equal(result.minutes, 315);
+            TestRunner.assert.equal(result.breakMinutes, 60);
+        });
+
+        await TestRunner.test('calculateDayHours - multi-coppia lunedì integra solo la pausa reale mancante', () => {
+            const entries = [
+                { type: 'entrata', time: '08:00' },
+                { type: 'uscita', time: '12:00' },
+                { type: 'entrata', time: '12:10' },
+                { type: 'uscita', time: '14:10' }
+            ];
+            const result = timeCalculator.calculateDayHours(entries, '2026-02-02'); // Lunedì
+            // 6h nette con 10m di pausa reale -> integrazione 20m -> 5h40m finali
+            TestRunner.assert.equal(result.minutes, 340);
+            TestRunner.assert.equal(result.breakMinutes, 10);
         });
 
         await TestRunner.test('calculateDayHours - venerdì mantiene pausa piena oltre 6h', () => {
@@ -345,10 +358,36 @@ const TimeCalculatorTests = {
             TestRunner.assert.true(balance.isNeutral);
         });
 
-        await TestRunner.test('getRequiredPauseMinutes - differenzia lunedì e venerdì', () => {
-            TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(300, '2026-02-02'), 30);
-            TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(360, '2026-02-06'), 0);
-            TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(375, '2026-02-06'), 30);
+        await TestRunner.test('getRequiredPauseMinutes - differenzia coppia singola e multi-coppia', () => {
+            TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(300, '2026-02-02', 1, 0), 30);
+            TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(315, '2026-02-02', 2, 60), 0);
+            TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(360, '2026-02-06', 1, 0), 0);
+            TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(375, '2026-02-06', 1, 0), 30);
+        });
+
+        await TestRunner.test('calculateWeekTotal - settimana reale allineata al caso aziendale', () => {
+            const weekEntries = {
+                '2026-03-09': [{ type: 'smart', hours: 7.5 }],
+                '2026-03-10': [
+                    { type: 'entrata', time: '09:02' },
+                    { type: 'uscita', time: '13:05' },
+                    { type: 'entrata', time: '13:50' },
+                    { type: 'uscita', time: '17:41' }
+                ],
+                '2026-03-11': [
+                    { type: 'entrata', time: '09:21' },
+                    { type: 'uscita', time: '18:37' }
+                ],
+                '2026-03-12': [
+                    { type: 'entrata', time: '09:06' },
+                    { type: 'uscita', time: '15:01' }
+                ],
+                '2026-03-13': [{ type: 'smart', hours: 6 }]
+            };
+
+            const result = timeCalculator.calculateWeekTotal(weekEntries);
+            TestRunner.assert.equal(result.minutes, 2135);
+            TestRunner.assert.equal(result.formatted, '35:35');
         });
     }
 };

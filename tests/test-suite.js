@@ -258,6 +258,52 @@ const TimeCalculatorTests = {
             TestRunner.assert.equal(result.minutes, 360);
         });
 
+        await TestRunner.test('calculateDayHours - lunedì scala sempre 30 minuti anche sotto 6h', () => {
+            const entries = [
+                { type: 'entrata', time: '08:00' },
+                { type: 'uscita', time: '13:00' }
+            ];
+            const result = timeCalculator.calculateDayHours(entries, '2026-02-02'); // Lunedì
+            // 5h lorde -> pausa fissa 30m -> 4h30m nette
+            TestRunner.assert.equal(result.minutes, 270);
+            TestRunner.assert.equal(result.breakMinutes, 30);
+        });
+
+        await TestRunner.test('calculateDayHours - lunedì mantiene pausa piena oltre 6h', () => {
+            const entries = [
+                { type: 'entrata', time: '08:00' },
+                { type: 'uscita', time: '14:45' }
+            ];
+            const result = timeCalculator.calculateDayHours(entries, '2026-02-02'); // Lunedì
+            // 6h45m lorde -> pausa piena 30m -> 6h15m nette
+            TestRunner.assert.equal(result.minutes, 375);
+            TestRunner.assert.equal(result.breakMinutes, 30);
+        });
+
+        await TestRunner.test('calculateDayHours - multi-coppia lunedì ignora la pausa reale e scala 30 minuti', () => {
+            const entries = [
+                { type: 'entrata', time: '08:00' },
+                { type: 'uscita', time: '12:00' },
+                { type: 'entrata', time: '13:00' },
+                { type: 'uscita', time: '14:15' }
+            ];
+            const result = timeCalculator.calculateDayHours(entries, '2026-02-02'); // Lunedì
+            // 5h15m lorde con 1h di break reale -> pausa fissa 30m -> 4h45m nette
+            TestRunner.assert.equal(result.minutes, 285);
+            TestRunner.assert.equal(result.breakMinutes, 30);
+        });
+
+        await TestRunner.test('calculateDayHours - venerdì mantiene pausa piena oltre 6h', () => {
+            const entries = [
+                { type: 'entrata', time: '08:00' },
+                { type: 'uscita', time: '14:15' }
+            ];
+            const result = timeCalculator.calculateDayHours(entries, '2026-02-06'); // Venerdì
+            // Regola conservativa: oltre 6h il venerdì applica ancora 30m
+            TestRunner.assert.equal(result.minutes, 345);
+            TestRunner.assert.equal(result.breakMinutes, 30);
+        });
+
         await TestRunner.test('calculateDayHours - smart working', () => {
             const entries = [{ type: 'smart', hours: 7.5 }];
             const result = timeCalculator.calculateDayHours(entries, '2026-02-02');
@@ -297,6 +343,12 @@ const TimeCalculatorTests = {
         await TestRunner.test('calculateBalance - saldo neutro', () => {
             const balance = timeCalculator.calculateBalance(2160); // Esattamente 36h
             TestRunner.assert.true(balance.isNeutral);
+        });
+
+        await TestRunner.test('getRequiredPauseMinutes - differenzia lunedì e venerdì', () => {
+            TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(300, '2026-02-02'), 30);
+            TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(360, '2026-02-06'), 0);
+            TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(375, '2026-02-06'), 30);
         });
     }
 };

@@ -17,10 +17,10 @@
  */
 
 // IMPORTANTE: Incrementa questo numero per forzare l'aggiornamento dell'app
-const CACHE_NAME = 'timbra-pa-v20';
+const CACHE_NAME = 'timbra-pa-v22';
 
 // Versione leggibile per logging
-const APP_VERSION = '2.3.1';
+const APP_VERSION = '2.3.3';
 
 // Determina il base path per GitHub Pages o localhost
 const BASE_PATH = self.location.pathname.replace('service-worker.js', '');

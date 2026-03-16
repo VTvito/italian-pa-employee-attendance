@@ -123,7 +123,10 @@
                 ❌ Assente
             </button>
         </section>
-        <p class="usage-guidance" id="usageGuidance">Suggerimento: usa i pulsanti sopra per timbrare. <strong>Correggi</strong> serve solo per modifiche manuali.</p>
+        <section class="status-card" id="statusCard" aria-live="polite">
+            <div class="status-card-label">Stato operativo</div>
+            <p class="status-card-message" id="usageGuidance">Sto preparando il riepilogo della settimana…</p>
+        </section>
 
         <!-- Week Days List -->
         <main class="week-days" id="weekDays">
@@ -137,6 +140,10 @@
                 <span id="totalHours" class="summary-value">00:00</span>
             </div>
             <div class="summary-row">
+                <span class="summary-label">Pause Applicate:</span>
+                <span id="pauseHours" class="summary-value summary-value-secondary">00:00</span>
+            </div>
+            <div class="summary-row">
                 <span class="summary-label">Ore Richieste:</span>
                 <span class="summary-value">36:00</span>
             </div>
@@ -147,21 +154,24 @@
         </section>
 
         <!-- Export/Import Buttons -->
-        <section class="export-buttons">
-            <button id="exportJsonBtn" class="btn btn-export">
-                📄 Esporta JSON
-            </button>
-            <button id="exportExcelBtn" class="btn btn-export">
-                📊 Esporta Excel
-            </button>
-            <button id="importBtn" class="btn btn-export">
-                📥 Importa
-            </button>
-            <input type="file" id="importFile" accept=".json" style="display: none;">
-            <button id="backupBtn" class="btn btn-export">
-                💾 Esporta Backup JSON
-            </button>
-        </section>
+        <details class="tools-panel">
+            <summary class="tools-summary">Strumenti e backup</summary>
+            <section class="export-buttons">
+                <button id="exportJsonBtn" class="btn btn-export">
+                    📄 Esporta JSON
+                </button>
+                <button id="exportExcelBtn" class="btn btn-export">
+                    📊 Esporta Excel
+                </button>
+                <button id="importBtn" class="btn btn-export">
+                    📥 Importa
+                </button>
+                <input type="file" id="importFile" accept=".json" style="display: none;">
+                <button id="backupBtn" class="btn btn-export">
+                    💾 Esporta Backup JSON
+                </button>
+            </section>
+        </details>
         
         <!-- App Footer with Install Link -->
         <footer class="app-footer">

@@ -622,6 +622,51 @@ body {
     line-height: 1.4;
 }
 
+.status-card {
+    margin: -2px 0 14px;
+    padding: 12px 14px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, rgba(0, 122, 255, 0.08) 0%, rgba(0, 122, 255, 0.03) 100%);
+    border: 1px solid rgba(0, 122, 255, 0.12);
+}
+
+.status-card-label {
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-primary);
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.status-card-message {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: 1.45;
+}
+
+.status-card-message strong {
+    color: var(--color-text);
+}
+
+.day-calculation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 16px 10px;
+}
+
+.day-calc-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 10px;
+    border-radius: var(--radius-full);
+    background-color: var(--color-bg-grouped);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+}
+
 /* Friday exit hint */
 .friday-exit-hint {
     display: flex;
@@ -686,6 +731,11 @@ body {
     letter-spacing: -0.02em;
 }
 
+.summary-value-secondary {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-base);
+}
+
 .summary-balance .summary-label {
     font-weight: 600;
     font-size: var(--font-size-base);
@@ -716,6 +766,46 @@ body {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
     margin-bottom: var(--spacing-md);
+}
+
+.tools-panel {
+    margin-bottom: var(--spacing-md);
+    background-color: var(--color-bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.tools-summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    font-weight: 700;
+    color: var(--color-text);
+    position: relative;
+}
+
+.tools-summary::-webkit-details-marker {
+    display: none;
+}
+
+.tools-summary::after {
+    content: '▾';
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-light);
+    transition: transform var(--transition-fast);
+}
+
+.tools-panel[open] .tools-summary::after {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.tools-panel .export-buttons {
+    padding: 0 12px 12px;
+    margin-bottom: 0;
 }
 
 /* ============================================

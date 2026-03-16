@@ -7,7 +7,7 @@
 
 import { eventBus, EVENTS } from '../utils/EventBus.js';
 import { formatDateWithDay, formatDateISO, isToday, isFriday, MONTH_NAMES } from '../utils/DateUtils.js';
-import { sanitizeString } from '../utils/Validators.js';
+import { sanitizeString, minutesToTime } from '../utils/Validators.js';
 import { timeCalculator, CONFIG } from '../services/TimeCalculator.js';
 
 /**
@@ -40,7 +40,9 @@ export class UIManager {
             currentWeekBadge: document.getElementById('currentWeekBadge'),
             weekDays: document.getElementById('weekDays'),
             totalHours: document.getElementById('totalHours'),
+            pauseHours: document.getElementById('pauseHours'),
             balanceHours: document.getElementById('balanceHours'),
+            usageGuidance: document.getElementById('usageGuidance'),
             toast: document.getElementById('toast'),
             
             // Buttons
@@ -415,6 +417,7 @@ export class UIManager {
 
         // Calcola e mostra totali
         this.updateTotals(weekData);
+        this.renderStatusCard(weekInfo, weekData);
     }
 
     /**
@@ -475,6 +478,11 @@ export class UIManager {
         `;
         card.appendChild(header);
 
+        const calculationDetails = this.createDayCalculationDetails(dayHours, entries, day.dateKey);
+        if (calculationDetails) {
+            card.appendChild(calculationDetails);
+        }
+
         // Entries
         const entriesContainer = document.createElement('div');
         entriesContainer.className = 'day-entries';
@@ -522,6 +530,51 @@ export class UIManager {
 
         card.appendChild(entriesContainer);
         return card;
+    }
+
+    /**
+     * Crea un riepilogo sintetico del calcolo giornaliero
+     * @param {Object} dayHours - Risultato calcolo giorno
+     * @param {Array} entries - Entry del giorno
+     * @param {string} dateKey - Data ISO
+     * @returns {HTMLElement|null}
+     */
+    createDayCalculationDetails(dayHours, entries, dateKey) {
+        if (!entries || entries.length === 0) {
+            return null;
+        }
+
+        if (entries.length === 1 && (entries[0].type === 'smart' || entries[0].type === 'assente')) {
+            return null;
+        }
+
+        const details = document.createElement('div');
+        details.className = 'day-calculation';
+
+        const grossMinutes = dayHours.grossMinutes || 0;
+        const netMinutes = dayHours.minutes || 0;
+        const appliedPauseMinutes = Math.max(0, grossMinutes - netMinutes);
+        const pairCount = Math.min(
+            entries.filter((entry) => entry.type === 'entrata').length,
+            entries.filter((entry) => entry.type === 'uscita').length
+        );
+
+        let pauseLabel = 'Nessuna pausa';
+        if (pairCount > 1 && (dayHours.breakMinutes || 0) > 0) {
+            pauseLabel = `Pausa reale ${minutesToTime(dayHours.breakMinutes)}`;
+        } else if (appliedPauseMinutes > 0) {
+            pauseLabel = `Pausa applicata ${minutesToTime(appliedPauseMinutes)}`;
+        }
+
+        const targetMinutes = timeCalculator.hoursToMinutes(timeCalculator.getDailyTarget(dateKey));
+
+        details.innerHTML = `
+            <span class="day-calc-chip">Lordo ${minutesToTime(grossMinutes)}</span>
+            <span class="day-calc-chip">${pauseLabel}</span>
+            <span class="day-calc-chip">Target ${minutesToTime(targetMinutes)}</span>
+        `;
+
+        return details;
     }
 
     /**
@@ -591,8 +644,13 @@ export class UIManager {
     updateTotals(weekData) {
         const weekTotal = timeCalculator.calculateWeekTotal(weekData);
         const balance = timeCalculator.calculateBalance(weekTotal.minutes);
+        const totalPauseMinutes = Object.values(weekTotal.byDay)
+            .reduce((sum, dayResult) => sum + Math.max(0, (dayResult.grossMinutes || 0) - (dayResult.minutes || 0)), 0);
 
         this.elements.totalHours.textContent = weekTotal.formatted;
+        if (this.elements.pauseHours) {
+            this.elements.pauseHours.textContent = minutesToTime(totalPauseMinutes);
+        }
         this.elements.balanceHours.textContent = balance.formatted;
 
         // Aggiorna classe per colore
@@ -605,6 +663,52 @@ export class UIManager {
         } else {
             this.elements.balanceHours.classList.add('balance-neutral');
         }
+    }
+
+    /**
+     * Mostra un riepilogo operativo contestuale per la settimana visualizzata
+     * @param {Object} weekInfo - Informazioni settimana
+     * @param {Object} weekData - Dati settimana
+     */
+    renderStatusCard(weekInfo, weekData) {
+        if (!this.elements.usageGuidance) {
+            return;
+        }
+
+        if (!weekInfo.isCurrent) {
+            this.elements.usageGuidance.innerHTML = 'Stai guardando una settimana diversa da quella corrente. Totali e saldi vengono ricalcolati automaticamente dai dati salvati.';
+            return;
+        }
+
+        const todayKey = formatDateISO(new Date());
+        const todayEntries = weekData[todayKey] || [];
+
+        if (todayEntries.length === 0) {
+            this.elements.usageGuidance.innerHTML = 'Oggi non hai ancora registrazioni. Usa <strong>Entrata</strong>, <strong>Uscita</strong>, <strong>Smart</strong> o <strong>Assente</strong>.';
+            return;
+        }
+
+        if (todayEntries.length === 1 && (todayEntries[0].type === 'smart' || todayEntries[0].type === 'assente')) {
+            const specialLabel = todayEntries[0].type === 'smart' ? 'Smart Working' : 'Assente';
+            this.elements.usageGuidance.innerHTML = `Oggi risulti <strong>${specialLabel}</strong>. Usa <strong>Correggi</strong> solo se devi fare una modifica manuale.`;
+            return;
+        }
+
+        const lastEntry = todayEntries[todayEntries.length - 1];
+        const entrate = todayEntries.filter((entry) => entry.type === 'entrata').length;
+        const uscite = todayEntries.filter((entry) => entry.type === 'uscita').length;
+
+        if (entrate > uscite) {
+            this.elements.usageGuidance.innerHTML = `Ultima timbratura: <strong>${this.getTypeLabel(lastEntry.type)} ${lastEntry.time || ''}</strong>. Prossima azione consigliata: <strong>Uscita</strong>.`;
+            return;
+        }
+
+        if (entrate > 0 && entrate === uscite) {
+            this.elements.usageGuidance.innerHTML = `La giornata di oggi risulta completa. Ultima registrazione: <strong>${this.getTypeLabel(lastEntry.type)} ${lastEntry.time || ''}</strong>.`;
+            return;
+        }
+
+        this.elements.usageGuidance.innerHTML = 'Usa i pulsanti automatici in alto per timbrare; <strong>Correggi</strong> serve solo in caso di modifica manuale.';
     }
 
     /**

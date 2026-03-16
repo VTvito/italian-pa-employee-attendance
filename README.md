@@ -24,6 +24,7 @@ Funziona offline, si installa come app e salva i dati solo sul dispositivo.
 - Nessun account
 - Nessun backend
 - Storage locale: localStorage come primario, IndexedDB come fallback
+- Le settimane salvate restano disponibili dopo gli update; totali e saldi vengono ricalcolati dai dati inseriti
 - Export manuale quando vuoi
 
 Nota iOS: Safari può eliminare i dati PWA dopo 7 giorni di inutilizzo. Conviene aprire l'app almeno una volta a settimana o esportare periodicamente un backup JSON.
@@ -70,7 +71,7 @@ js/
     └── Validators.js    # Validazione orari
 ```
 
-Stack: Vanilla JavaScript ES Modules, CSS singolo, localStorage + IndexedDB, Service Worker, manifest PWA.
+Stack: Vanilla JavaScript ES Modules, CSS singolo, localStorage + IndexedDB, Service Worker con app shell network-first, manifest PWA.
 
 ### Avvio locale
 

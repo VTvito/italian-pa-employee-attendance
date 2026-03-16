@@ -18,6 +18,11 @@ Questo documento raccoglie le lezioni apprese durante lo sviluppo agentico dell'
 - **Soluzione**: Incrementare SEMPRE il numero in `CACHE_NAME` (es. `timbra-pa-v17` → `timbra-pa-v18`) quando si modifica qualsiasi file presente in `CACHE_URLS`.
 - **Regola**: Ogni commit che tocca file cacheable DEVE bumbare il cache version.
 
+### Problema: Stato misto tra HTML nuovo e JS vecchio
+- **Causa**: Con strategia cache-first/stale-while-revalidate l'app shell poteva servire script vecchi dalla cache dopo un update.
+- **Soluzione**: Usare `network-first` per HTML, JS, CSS e manifest; lasciare cache-first solo per asset statici secondari.
+- **Regola**: Gli update della logica applicativa non devono mai dipendere da cache-first sugli asset core.
+
 ### Problema: Fallback offline rotto con percorso relativo
 - **Causa**: Il fallback HTML usava `/index.html` (path assoluto) anziché il path relativo per GitHub Pages.
 - **Soluzione**: Usare `BASE_PATH + 'index.html'` per il fallback, dove `BASE_PATH` è derivato dal path del SW stesso.

@@ -9,7 +9,8 @@ applyTo: "service-worker.js,js/app.js,manifest.json"
 Il file `service-worker.js` gestisce SOLO il caching delle risorse statiche. Non tocca mai i dati utente (localStorage/IndexedDB).
 
 ### Strategia Caching
-- **Cache-first + Stale-while-revalidate**: serve dalla cache, aggiorna in background
+- **App shell network-first**: HTML, JS, CSS e manifest preferiscono la rete con fallback cache
+- **Asset statici secondari cache-first**: icone e file non critici possono arrivare dalla cache
 - `CACHE_NAME` deve essere incrementato ad ogni modifica di file cached
 - Prefisso cache attuale: `timbra-pa-vNN`
 

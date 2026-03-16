@@ -56,9 +56,9 @@ js/
 - Settimana lavorativa: **36 ore** (Lun–Ven)
 - Target giornaliero Lun–Gio: **7h 30m** — Venerdì: **6h**
 - Pausa pranzo automatica:
-  - Lun–Gio: **30 minuti fissi** se esiste lavoro registrato
-  - Venerdì: **0 minuti fino a 6h lorde**, **30 minuti oltre 6h**
-  - Le multi-timbrature non riducono la pausa automatica
+  - Lun–Gio: **30 minuti fissi** con coppia singola; con multi-timbrature vale la pausa reale e si integra solo l'eventuale differenza fino a 30 minuti
+  - Venerdì: **0 minuti fino a 6h lorde**, oltre 6h stessa logica della pausa minima di 30 minuti
+  - Le multi-timbrature evitano deduzioni doppie se il break reale è già sufficiente
 - Smart Working / Assente: sostituiscono l'intera giornata con ore fisse
 - Venerdì: l'app suggerisce l'ora di uscita anticipata calcolando gli extra Lun–Gio
 
@@ -108,6 +108,6 @@ git push origin main
 2. **skipWaiting**: NON va nel handler `install` — solo nel handler `message` su richiesta utente
 3. **iOS PWA**: l'icona e il nome vengono cachati all'installazione. Per aggiornarli l'utente deve rimuovere e reinstallare l'app
 4. **localStorage quota**: ~5MB. Comprimere dati se si cresce. Attualmente ~2KB per mese
-5. **Calcoli pause**: Lun–Gio la pausa è sempre 30min se c'è lavoro registrato; venerdì solo sopra 6h lorde. Le multi-timbrature non compensano la pausa automatica
+5. **Calcoli pause**: con coppia singola Lun–Gio la pausa è sempre 30min; con multi-timbrature deduci solo l'eventuale quota mancante ai 30min. Venerdì stessa logica ma solo sopra 6h lorde
 6. **parseDateISO**: usa `new Date(year, month-1, day)` (locale), non `new Date(str)` (UTC mismatch)
 7. **git push fallisce**: fare sempre `git pull --rebase origin main` e riprovare

@@ -53,9 +53,9 @@ export class TimeCalculator {
         }
 
         // Calcola ore da coppie entrata/uscita
-        const { workedMinutes, hasIncomplete } = this.calculatePairMinutes(entries);
+        const { workedMinutes, hasIncomplete, pairCount, breakMinutes } = this.calculatePairMinutes(entries);
 
-        const requiredPauseMinutes = this.getRequiredPauseMinutes(workedMinutes, dateKey);
+        const requiredPauseMinutes = this.getRequiredPauseMinutes(workedMinutes, dateKey, pairCount, breakMinutes);
         const netMinutes = Math.max(0, workedMinutes - requiredPauseMinutes);
 
         return {
@@ -64,7 +64,7 @@ export class TimeCalculator {
             hasIncomplete,
             grossMinutes: workedMinutes,
             pauseApplied: requiredPauseMinutes > 0,
-            breakMinutes: requiredPauseMinutes
+            breakMinutes: pairCount > 1 ? breakMinutes : requiredPauseMinutes
         };
     }
 
@@ -117,15 +117,44 @@ export class TimeCalculator {
      * Calcola la pausa totale richiesta in base al giorno e alle ore lorde
      * @param {number} workedMinutes - Minuti lavorati
      * @param {string} dateKey - Data in formato ISO
+     * @param {number} pairCount - Numero di coppie entrata/uscita complete
+     * @param {number} breakMinutes - Minuti di pausa reale tra coppie
      * @returns {number}
      */
-    getRequiredPauseMinutes(workedMinutes, dateKey) {
+    getRequiredPauseMinutes(workedMinutes, dateKey, pairCount = 1, breakMinutes = 0) {
+        if (workedMinutes <= 0) {
+            return 0;
+        }
+
+        const minimumPauseMinutes = this.getMinimumPauseMinutes(workedMinutes, dateKey);
+        if (minimumPauseMinutes === 0) {
+            return 0;
+        }
+
+        if (pairCount <= 1) {
+            return minimumPauseMinutes;
+        }
+
+        return Math.max(0, minimumPauseMinutes - breakMinutes);
+    }
+
+    /**
+     * Restituisce la pausa minima richiesta per il giorno
+     * @param {number} workedMinutes - Minuti lavorati lordi
+     * @param {string} dateKey - Data in formato ISO
+     * @returns {number}
+     */
+    getMinimumPauseMinutes(workedMinutes, dateKey) {
+        if (workedMinutes <= 0) {
+            return 0;
+        }
+
         if (isFriday(parseDateISO(dateKey))) {
             const pauseThresholdMinutes = this.hoursToMinutes(CONFIG.PAUSE_THRESHOLD_HOURS);
             return workedMinutes > pauseThresholdMinutes ? CONFIG.PAUSE_MINUTES : 0;
         }
 
-        return workedMinutes > 0 ? CONFIG.PAUSE_MINUTES : 0;
+        return CONFIG.PAUSE_MINUTES;
     }
 
     /**
@@ -135,7 +164,7 @@ export class TimeCalculator {
      * @returns {boolean}
      */
     shouldApplyPause(workedMinutes, dateKey) {
-        return this.getRequiredPauseMinutes(workedMinutes, dateKey) > 0;
+        return this.getMinimumPauseMinutes(workedMinutes, dateKey) > 0;
     }
 
     /**

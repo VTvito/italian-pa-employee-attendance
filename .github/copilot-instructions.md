@@ -14,7 +14,7 @@ Hosting: **GitHub Pages** — `https://vtvito.github.io/italian-pa-employee-atte
 | Moduli | ES Modules nativi (`<script type="module">`) |
 | Stile | Single CSS file, variabili CSS custom, iOS-inspired design |
 | Storage | localStorage (`workTimeData` key) + IndexedDB (`OrariLavoroDB`) |
-| Offline | Service Worker con cache-first + stale-while-revalidate |
+| Offline | Service Worker con app shell network-first e asset secondari cache-first |
 | Manifesto | `manifest.json` — standalone PWA |
 | Icone | SVG con linear gradient |
 | Test | `tests/test-suite.js` (test manuali, no runner) |
@@ -97,6 +97,7 @@ git push origin main
 - Costanti: **UPPER_SNAKE_CASE**
 - Ogni servizio esporta un **singleton** (`export const timeCalculator = new TimeCalculator()`)
 - I dati sono sempre serializzati come `{weekKey: {dateKey: [{type, time?, hours?}]}}` 
+- Si salvano solo le entry raw; totali, saldi e pause vengono sempre ricalcolati a runtime
 - Le date usano ISO 8601: `YYYY-MM-DD` (dateKey), `YYYY-Www` (weekKey)
 - Gli orari sono `HH:MM` (24h)
 - **Mai usare inline styles** per nuovi componenti — usare classi CSS in `css/style.css`
@@ -109,5 +110,6 @@ git push origin main
 3. **iOS PWA**: l'icona e il nome vengono cachati all'installazione. Per aggiornarli l'utente deve rimuovere e reinstallare l'app
 4. **localStorage quota**: ~5MB. Comprimere dati se si cresce. Attualmente ~2KB per mese
 5. **Calcoli pause**: con coppia singola Lun–Gio la pausa è sempre 30min; con multi-timbrature deduci solo l'eventuale quota mancante ai 30min. Venerdì stessa logica ma solo sopra 6h lorde
-6. **parseDateISO**: usa `new Date(year, month-1, day)` (locale), non `new Date(str)` (UTC mismatch)
-7. **git push fallisce**: fare sempre `git pull --rebase origin main` e riprovare
+6. **Update PWA**: HTML, JS, CSS e manifest devono preferire la rete per evitare mix tra codice nuovo e vecchio; il SW non deve mai toccare localStorage o IndexedDB
+7. **parseDateISO**: usa `new Date(year, month-1, day)` (locale), non `new Date(str)` (UTC mismatch)
+8. **git push fallisce**: fare sempre `git pull --rebase origin main` e riprovare

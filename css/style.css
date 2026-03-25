@@ -693,7 +693,6 @@ body {
     font-size: var(--font-size-xs);
     font-weight: 600;
 }
-
 /* Friday exit hint */
 .friday-exit-hint {
     display: flex;
@@ -899,16 +898,6 @@ body {
     -webkit-overflow-scrolling: touch;
 }
 
-.modal-small {
-    max-width: 400px;
-}
-
-/* Handle indicator for iOS sheet */
-.modal-content::before {
-    content: '';
-    display: block;
-    width: 36px;
-    height: 5px;
     background: var(--color-text-muted);
     border-radius: var(--radius-full);
     margin: 8px auto 0;

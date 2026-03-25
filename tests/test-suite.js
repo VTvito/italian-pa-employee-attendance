@@ -326,7 +326,7 @@ const TimeCalculatorTests = {
         await TestRunner.test('calculateDayHours - assente', () => {
             const entries = [{ type: 'assente', hours: 0 }];
             const result = timeCalculator.calculateDayHours(entries, '2026-02-02');
-            TestRunner.assert.equal(result.minutes, 0);
+            TestRunner.assert.equal(result.minutes, 450);
         });
 
         await TestRunner.test('calculateDayHours - multiple entries', () => {
@@ -389,6 +389,31 @@ const TimeCalculatorTests = {
             TestRunner.assert.equal(result.minutes, 2135);
             TestRunner.assert.equal(result.formatted, '35:35');
         });
+
+        await TestRunner.test('calculateFridayExitSuggestion - usa l ultimo giorno utile in sede', () => {
+            const weekEntries = {
+                '2026-03-09': [{ type: 'smart', hours: 7.5 }],
+                '2026-03-10': [
+                    { type: 'entrata', time: '08:00' },
+                    { type: 'uscita', time: '17:00' }
+                ],
+                '2026-03-11': [{ type: 'entrata', time: '08:00' }],
+                '2026-03-12': [{ type: 'assente', hours: 0 }],
+                '2026-03-13': [{ type: 'smart', hours: 6 }]
+            };
+
+            const suggestion = timeCalculator.calculateFridayExitSuggestion(weekEntries, [
+                '2026-03-09',
+                '2026-03-10',
+                '2026-03-11',
+                '2026-03-12',
+                '2026-03-13'
+            ]);
+
+            TestRunner.assert.equal(suggestion.targetDateKey, '2026-03-11');
+            TestRunner.assert.equal(suggestion.targetDayMinutes, 390);
+            TestRunner.assert.equal(suggestion.exitTime, '15:00');
+        });
     }
 };
 
@@ -422,9 +447,9 @@ const TimeEntryTests = {
             TestRunner.assert.equal(smartFriday.hours, 6);
         });
 
-        await TestRunner.test('createAssente - ore zero', () => {
+        await TestRunner.test('createAssente - ore giornata intera', () => {
             const entry = TimeEntry.createAssente();
-            TestRunner.assert.equal(entry.hours, 0);
+            TestRunner.assert.equal(entry.hours, 7.5);
             TestRunner.assert.true(entry.isAssente());
         });
 
@@ -514,6 +539,17 @@ const WeekDataTests = {
             week.addEntry(dateKey, { type: 'smart', hours: 7.5 });
             
             TestRunner.assert.true(week.isSpecialDay(dateKey));
+        });
+
+        await TestRunner.test('addEntry assente venerdi - normalizza ore importate', () => {
+            const week = new WeekData(2026, 6);
+            const dateKey = '2026-02-06';
+
+            week.addEntry(dateKey, { type: 'assente', hours: 0 });
+
+            const entries = week.getEntriesForDate(dateKey);
+            TestRunner.assert.equal(entries.length, 1);
+            TestRunner.assert.equal(entries[0].hours, 6);
         });
 
         await TestRunner.test('toJSON - serializzazione corretta', () => {

@@ -410,8 +410,8 @@ export class UIManager {
         // Render giorni
         this.renderDays(weekInfo.days, weekData);
 
-        // Suggerimento uscita venerdì
-        this.renderFridayExitHint(weekInfo, weekData);
+        // Suggerimento uscita ultimo giorno utile in presenza
+        this.renderWorkdayExitHint(weekInfo, weekData);
 
         // Calcola e mostra totali
         this.updateTotals(weekData);
@@ -753,85 +753,73 @@ export class UIManager {
     }
 
     /**
-     * Mostra suggerimento uscita anticipata venerdì con minuti extra accumulati
+     * Mostra suggerimento uscita per l'ultimo giorno utile in presenza
      * @param {Object} weekInfo - Info settimana
      * @param {Object} weekData - Dati settimana
      */
-    renderFridayExitHint(weekInfo, weekData) {
+    renderWorkdayExitHint(weekInfo, weekData) {
         // Rimuovi hint precedente se esiste
         const existingHint = document.getElementById('fridayExitHint');
         if (existingHint) existingHint.remove();
 
         // Calcola suggerimento
-        const suggestion = timeCalculator.calculateFridayExitSuggestion(weekData);
+        const suggestion = timeCalculator.calculateFridayExitSuggestion(
+            weekData,
+            (weekInfo.days || []).map((day) => day.dateKey)
+        );
         if (!suggestion) return;
 
-        // Trova la card del venerdì
+        // Trova la card del giorno target
         const dayCards = document.querySelectorAll('.day-card');
-        let fridayCard = null;
+        let targetCard = null;
         const days = weekInfo.days || [];
         for (let i = 0; i < days.length; i++) {
-            if (days[i].dateKey === suggestion.fridayDateKey && dayCards[i]) {
-                fridayCard = dayCards[i];
+            if (days[i].dateKey === suggestion.targetDateKey && dayCards[i]) {
+                targetCard = dayCards[i];
                 break;
             }
         }
-        if (!fridayCard) return;
+        if (!targetCard) return;
 
-        const extraFormatted = timeCalculator.formatDeltaMinutes(suggestion.extraMinutes);
+        const targetDay = days.find((day) => day.dateKey === suggestion.targetDateKey);
+        const targetDayLabel = targetDay
+            ? `${this.getDayName(targetDay.dayOfWeek)} ${this.formatDate(targetDay.date)}`
+            : suggestion.targetDateKey;
+        const targetHours = Math.floor(suggestion.targetDayMinutes / 60);
+        const targetMinutes = suggestion.targetDayMinutes % 60;
+        const targetFormatted = targetMinutes > 0
+            ? `${targetHours}h ${targetMinutes}m`
+            : `${targetHours}h`;
         const hint = document.createElement('div');
         hint.id = 'fridayExitHint';
         hint.className = 'friday-exit-hint';
 
-        if (suggestion.hasFridayComplete) {
-            // Venerdì già completato: non mostrare suggerimento
+        if (suggestion.hasCompleteDay) {
             return;
         }
 
-        if (suggestion.exitTime && suggestion.extraMinutes !== 0) {
-            // Ha entrata e ci sono extra: mostra suggerimento uscita
-            const adjustedHours = Math.floor(suggestion.fridayTargetMinutes / 60);
-            const adjustedMins = suggestion.fridayTargetMinutes % 60;
-            const adjustedFormatted = adjustedMins > 0 
-                ? `${adjustedHours}h ${adjustedMins}m` 
-                : `${adjustedHours}h`;
-
+        if (suggestion.exitTime) {
             hint.innerHTML = `
                 <span class="friday-hint-icon">🕐</span>
                 <span class="friday-hint-text">
-                    Extra Lun–Gio: <strong>${extraFormatted}</strong> → 
-                    Target venerdì: <strong>${adjustedFormatted}</strong> → 
+                    Ultimo giorno utile in sede: <strong>${targetDayLabel}</strong> → 
+                    Ore da coprire: <strong>${targetFormatted}</strong> → 
                     Uscita suggerita: <strong>${suggestion.exitTime}</strong>
                 </span>
             `;
-        } else if (suggestion.exitTime && suggestion.extraMinutes === 0) {
-            // Ha entrata ma zero extra
-            hint.innerHTML = `
-                <span class="friday-hint-icon">🕐</span>
-                <span class="friday-hint-text">
-                    Nessun extra accumulato → Uscita regolare: <strong>${suggestion.exitTime}</strong>
-                </span>
-            `;
-        } else if (!suggestion.hasFridayEntrata && suggestion.extraMinutes !== 0) {
-            // Non ha ancora timbrato entrata ma ci sono extra da scalare
-            const adjustedHours = Math.floor(suggestion.fridayTargetMinutes / 60);
-            const adjustedMins = suggestion.fridayTargetMinutes % 60;
-            const adjustedFormatted = adjustedMins > 0 
-                ? `${adjustedHours}h ${adjustedMins}m` 
-                : `${adjustedHours}h`;
-
+        } else if (!suggestion.hasEntrata && suggestion.targetDayMinutes > 0) {
             hint.innerHTML = `
                 <span class="friday-hint-icon">💡</span>
                 <span class="friday-hint-text">
-                    Extra Lun–Gio: <strong>${extraFormatted}</strong> → 
-                    Target venerdì: <strong>${adjustedFormatted}</strong>
+                    Ultimo giorno utile in sede: <strong>${targetDayLabel}</strong> → 
+                    Ore da coprire: <strong>${targetFormatted}</strong>
                 </span>
             `;
         } else {
             return; // Nessun suggerimento utile
         }
 
-        fridayCard.appendChild(hint);
+        targetCard.appendChild(hint);
     }
 }
 

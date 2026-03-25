@@ -28,6 +28,29 @@ export const CONFIG = {
  */
 export class TimeCalculator {
     /**
+     * Verifica se un array di entry rappresenta un giorno speciale completo
+     * @param {Array} entries - Array di entry del giorno
+     * @returns {boolean}
+     */
+    isSpecialDayEntries(entries) {
+        return Array.isArray(entries)
+            && entries.length === 1
+            && (entries[0].type === 'smart' || entries[0].type === 'assente');
+    }
+
+    /**
+     * Restituisce le ore fisse per un giorno speciale in base alla data
+     * @param {string} type - Tipo speciale
+     * @param {string} dateKey - Data in formato ISO
+     * @returns {number}
+     */
+    getSpecialDayHours(type, dateKey) {
+        return type === 'smart'
+            ? this.getSmartHours(dateKey)
+            : this.getDailyTarget(dateKey);
+    }
+
+    /**
      * Calcola le ore lavorate per un giorno
      * @param {Array} entries - Array di entry per il giorno
      * @param {string} dateKey - Data in formato ISO (per determinare venerdì)
@@ -39,17 +62,16 @@ export class TimeCalculator {
         }
 
         // Verifica se è un giorno speciale (smart/assente)
-        if (entries.length === 1) {
+        if (this.isSpecialDayEntries(entries)) {
             const entry = entries[0];
-            if (entry.type === 'smart' || entry.type === 'assente') {
-                const hours = entry.hours || 0;
-                const minutes = Math.round(hours * 60);
-                return {
-                    minutes,
-                    formatted: minutesToTime(minutes),
-                    hasIncomplete: false
-                };
-            }
+            const hours = this.getSpecialDayHours(entry.type, dateKey);
+            const minutes = Math.round(hours * 60);
+
+            return {
+                minutes,
+                formatted: minutesToTime(minutes),
+                hasIncomplete: false
+            };
         }
 
         // Calcola ore da coppie entrata/uscita
@@ -349,70 +371,170 @@ export class TimeCalculator {
     }
 
     /**
-     * Calcola il suggerimento di uscita per l'ultimo giorno (venerdì)
-     * basandosi sui minuti extra accumulati lun-gio.
-     * @param {Object} weekEntries - Oggetto {dateKey: [entries]}
-     * @returns {{exitTime: string, extraMinutes: number, fridayTarget: number, fridayDateKey: string, hasFridayEntrata: boolean}|null}
+     * Analizza lo stato di un giorno con timbrature aperte/chiuse
+     * @param {Array} entries - Array di entry del giorno
+     * @returns {{
+     *   hasEntrata: boolean,
+     *   hasOpenSession: boolean,
+     *   isComplete: boolean,
+     *   completedWorkedMinutes: number,
+     *   breakMinutes: number,
+     *   finalPairCount: number,
+     *   openEntryMinutes: number|null
+     * }}
      */
-    calculateFridayExitSuggestion(weekEntries) {
-        const sortedDates = Object.keys(weekEntries).sort();
-        if (sortedDates.length === 0) return null;
+    getOpenDayState(entries) {
+        const entrate = entries.filter((entry) => entry.type === 'entrata').map((entry) => entry.time);
+        const uscite = entries.filter((entry) => entry.type === 'uscita').map((entry) => entry.time);
 
-        // Trova il venerdì (ultimo giorno lavorativo)
-        const fridayDateKey = sortedDates.find(dk => isFriday(parseDateISO(dk)));
-        if (!fridayDateKey) return null;
+        const completePairs = Math.min(entrate.length, uscite.length);
+        let completedWorkedMinutes = 0;
+        let breakMinutes = 0;
 
-        // Calcola extra accumulati lun-gio (giorni prima del venerdì)
-        let extraMinutes = 0;
-        for (const dateKey of sortedDates) {
-            if (dateKey === fridayDateKey) continue;
-            const entries = weekEntries[dateKey];
-            if (!entries || entries.length === 0) continue;
-            const delta = this.calculateDayDelta(entries, dateKey);
-            if (delta && !delta.hasIncomplete) {
-                extraMinutes += delta.minutes;
+        for (let index = 0; index < completePairs; index++) {
+            const entrataMinutes = parseTimeToMinutes(entrate[index]);
+            const uscitaMinutes = parseTimeToMinutes(uscite[index]);
+
+            if (entrataMinutes !== null && uscitaMinutes !== null && uscitaMinutes > entrataMinutes) {
+                completedWorkedMinutes += uscitaMinutes - entrataMinutes;
             }
-        }
 
-        // Verifica se venerdì ha un'entrata
-        const fridayEntries = weekEntries[fridayDateKey] || [];
-        const hasFridayEntrata = fridayEntries.some(e => e.type === 'entrata');
-        const hasFridayUscita = fridayEntries.some(e => e.type === 'uscita');
-        const isFridaySpecial = fridayEntries.length === 1 && 
-            (fridayEntries[0].type === 'smart' || fridayEntries[0].type === 'assente');
-
-        // Non suggerire se venerdì è smart/assente o ha già l'uscita completata
-        if (isFridaySpecial) return null;
-
-        const fridayTargetMinutes = this.hoursToMinutes(CONFIG.FRIDAY_TARGET_HOURS);
-        // Il target del venerdì può essere ridotto dai minuti extra accumulati
-        const adjustedTarget = Math.max(0, fridayTargetMinutes - extraMinutes);
-
-        // Se c'è un'entrata, calcola ora uscita
-        // Se il target netto > 6h, bisogna aggiungere 30min di pausa obbligatoria
-        let exitTime = null;
-        if (hasFridayEntrata && !hasFridayUscita) {
-            const entrataEntry = fridayEntries.find(e => e.type === 'entrata');
-            if (entrataEntry) {
-                const entrataMin = parseTimeToMinutes(entrataEntry.time);
-                if (entrataMin !== null) {
-                    let grossTarget = adjustedTarget;
-                    if (adjustedTarget > this.hoursToMinutes(CONFIG.PAUSE_THRESHOLD_HOURS)) {
-                        grossTarget += CONFIG.PAUSE_MINUTES;
-                    }
-                    const exitMin = entrataMin + grossTarget;
-                    exitTime = minutesToTime(exitMin);
+            if (index < completePairs - 1) {
+                const exitMinutes = parseTimeToMinutes(uscite[index]);
+                const nextEntryMinutes = parseTimeToMinutes(entrate[index + 1]);
+                if (exitMinutes !== null && nextEntryMinutes !== null && nextEntryMinutes > exitMinutes) {
+                    breakMinutes += nextEntryMinutes - exitMinutes;
                 }
             }
         }
 
+        const hasOpenSession = entrate.length > uscite.length;
+        const openEntryIndex = uscite.length;
+        const openEntryMinutes = hasOpenSession
+            ? parseTimeToMinutes(entrate[openEntryIndex])
+            : null;
+
+        if (hasOpenSession && completePairs > 0) {
+            const lastExitMinutes = parseTimeToMinutes(uscite[completePairs - 1]);
+            if (
+                lastExitMinutes !== null
+                && openEntryMinutes !== null
+                && openEntryMinutes > lastExitMinutes
+            ) {
+                breakMinutes += openEntryMinutes - lastExitMinutes;
+            }
+        }
+
+        return {
+            hasEntrata: entrate.length > 0,
+            hasOpenSession,
+            isComplete: entrate.length > 0 && entrate.length === uscite.length,
+            completedWorkedMinutes,
+            breakMinutes,
+            finalPairCount: completePairs + (hasOpenSession ? 1 : 0),
+            openEntryMinutes
+        };
+    }
+
+    /**
+     * Stima l'orario di uscita per un giorno già iniziato e ancora aperto
+     * @param {Array} entries - Array di entry del giorno
+     * @param {string} dateKey - Data in formato ISO
+     * @param {number} targetNetMinutes - Minuti netti necessari nel giorno
+     * @returns {string|null}
+     */
+    estimateOpenDayExitTime(entries, dateKey, targetNetMinutes) {
+        const state = this.getOpenDayState(entries);
+        if (!state.hasOpenSession || state.openEntryMinutes === null) {
+            return null;
+        }
+
+        let requiredPauseMinutes = this.getRequiredPauseMinutes(
+            targetNetMinutes,
+            dateKey,
+            state.finalPairCount,
+            state.breakMinutes
+        );
+        let requiredGrossMinutes = targetNetMinutes + requiredPauseMinutes;
+
+        requiredPauseMinutes = this.getRequiredPauseMinutes(
+            requiredGrossMinutes,
+            dateKey,
+            state.finalPairCount,
+            state.breakMinutes
+        );
+        requiredGrossMinutes = targetNetMinutes + requiredPauseMinutes;
+
+        const openSessionMinutes = Math.max(0, requiredGrossMinutes - state.completedWorkedMinutes);
+        return minutesToTime(state.openEntryMinutes + openSessionMinutes);
+    }
+
+    /**
+     * Calcola il suggerimento di uscita per l'ultimo giorno utile in presenza,
+     * considerando smart/assenze future come giornate già coperte.
+     * @param {Object} weekEntries - Oggetto {dateKey: [entries]}
+     * @param {string[]} [workDateKeys=[]] - Giorni lavorativi ordinabili della settimana
+     * @returns {{
+     *   exitTime: string|null,
+     *   targetDayMinutes: number,
+     *   targetDateKey: string,
+     *   hasEntrata: boolean,
+     *   hasOpenSession: boolean,
+     *   hasCompleteDay: boolean,
+     *   isFridayTarget: boolean
+     * }|null}
+     */
+    calculateFridayExitSuggestion(weekEntries, workDateKeys = []) {
+        const sortedDates = (workDateKeys.length > 0 ? workDateKeys : Object.keys(weekEntries)).slice().sort();
+        if (sortedDates.length === 0) {
+            return null;
+        }
+
+        const targetDateKey = [...sortedDates].reverse().find((dateKey) => {
+            const entries = weekEntries[dateKey] || [];
+            return !this.isSpecialDayEntries(entries);
+        });
+
+        if (!targetDateKey) {
+            return null;
+        }
+
+        let plannedMinutes = 0;
+        for (const dateKey of sortedDates) {
+            if (dateKey === targetDateKey) {
+                continue;
+            }
+
+            const entries = weekEntries[dateKey] || [];
+            if (entries.length === 0) {
+                continue;
+            }
+
+            const dayResult = this.calculateDayHours(entries, dateKey);
+            if (!dayResult.hasIncomplete) {
+                plannedMinutes += dayResult.minutes;
+            }
+        }
+
+        const targetEntries = weekEntries[targetDateKey] || [];
+        const targetDayState = this.getOpenDayState(targetEntries);
+        if (targetDayState.isComplete) {
+            return null;
+        }
+
+        const targetDayMinutes = Math.max(0, CONFIG.WEEKLY_TARGET_MINUTES - plannedMinutes);
+        const exitTime = targetDayState.hasOpenSession
+            ? this.estimateOpenDayExitTime(targetEntries, targetDateKey, targetDayMinutes)
+            : null;
+
         return {
             exitTime,
-            extraMinutes,
-            fridayTargetMinutes: adjustedTarget,
-            fridayDateKey,
-            hasFridayEntrata,
-            hasFridayComplete: hasFridayUscita && hasFridayEntrata
+            targetDayMinutes,
+            targetDateKey,
+            hasEntrata: targetDayState.hasEntrata,
+            hasOpenSession: targetDayState.hasOpenSession,
+            hasCompleteDay: targetDayState.isComplete,
+            isFridayTarget: isFriday(parseDateISO(targetDateKey))
         };
     }
 }

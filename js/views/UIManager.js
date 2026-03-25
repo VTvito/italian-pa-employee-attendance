@@ -488,7 +488,7 @@ export class UIManager {
             
             // Click handler per giorno vuoto
             const handleEmptyClick = () => {
-                this.callbacks.onAddEntry?.(day.dateKey);
+                this.triggerAddEntry(day.dateKey, 'entrata');
             };
             
             entriesContainer.addEventListener('click', handleEmptyClick);
@@ -507,17 +507,11 @@ export class UIManager {
                 const entryEl = this.createEntryItem(entry, day.dateKey, index);
                 entriesContainer.appendChild(entryEl);
             });
-            
-            // Aggiungi bottone "+" per aggiungere altre entry al giorno
-            const addMoreBtn = document.createElement('button');
-            addMoreBtn.className = 'btn-add-more';
-            addMoreBtn.innerHTML = '+ Aggiungi';
-            addMoreBtn.setAttribute('aria-label', 'Aggiungi altra registrazione');
-            addMoreBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.callbacks.onAddEntry?.(day.dateKey);
-            });
-            entriesContainer.appendChild(addMoreBtn);
+
+            const dayActions = this.createDayActions(day.dateKey, entries);
+            if (dayActions) {
+                entriesContainer.appendChild(dayActions);
+            }
         }
 
         card.appendChild(entriesContainer);
@@ -569,7 +563,7 @@ export class UIManager {
         item.addEventListener('click', () => {
             if (this.hasShownEditHintToast) return;
             this.hasShownEditHintToast = true;
-            this.showToast('Per timbrare usa i pulsanti Entrata/Uscita in alto. "Correggi" serve solo per modifiche manuali.', 'info');
+            this.showToast('Per una nuova timbratura usa il pulsante + sotto il giorno. "Correggi" serve solo per modificare questa riga.', 'info');
         });
 
         item.addEventListener('keydown', (e) => {
@@ -577,11 +571,83 @@ export class UIManager {
                 if (this.hasShownEditHintToast) return;
                 e.preventDefault();
                 this.hasShownEditHintToast = true;
-                this.showToast('Usa i pulsanti automatici in alto; modifica solo in caso di correzione.', 'info');
+                this.showToast('Nuova timbratura: usa il pulsante + del giorno. "Correggi" modifica solo la riga selezionata.', 'info');
             }
         });
 
         return item;
+    }
+
+    /**
+     * Crea le azioni contestuali per un giorno con registrazioni
+     * @param {string} dateKey - Data ISO
+     * @param {Array} entries - Entry del giorno
+     * @returns {HTMLElement|null}
+     */
+    createDayActions(dateKey, entries) {
+        if (this.isSpecialDay(entries)) {
+            const note = document.createElement('div');
+            note.className = 'day-special-note';
+            note.textContent = 'Giornata speciale: usa Correggi solo se vuoi cambiare tipo o data.';
+            return note;
+        }
+
+        const nextType = this.getNextManualEntryType(entries);
+        const actionLabel = nextType === 'uscita'
+            ? '+ Aggiungi nuova uscita'
+            : '+ Aggiungi nuova entrata';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'day-entry-actions';
+
+        const addButton = document.createElement('button');
+        addButton.type = 'button';
+        addButton.className = 'btn-add-next';
+        addButton.textContent = actionLabel;
+        addButton.setAttribute('aria-label', actionLabel);
+        addButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.triggerAddEntry(dateKey, nextType);
+        });
+
+        const helper = document.createElement('p');
+        helper.className = 'day-entry-helper';
+        helper.textContent = 'Per modificare una registrazione esistente usa Correggi sulla riga interessata.';
+
+        wrapper.appendChild(addButton);
+        wrapper.appendChild(helper);
+
+        return wrapper;
+    }
+
+    /**
+     * Determina se il giorno e di tipo speciale
+     * @param {Array} entries - Entry del giorno
+     * @returns {boolean}
+     */
+    isSpecialDay(entries) {
+        return entries.length === 1
+            && (entries[0].type === 'smart' || entries[0].type === 'assente');
+    }
+
+    /**
+     * Determina il tipo suggerito per aggiunta manuale
+     * @param {Array} entries - Entry del giorno
+     * @returns {string}
+     */
+    getNextManualEntryType(entries) {
+        const entrateCount = entries.filter((entry) => entry.type === 'entrata').length;
+        const usciteCount = entries.filter((entry) => entry.type === 'uscita').length;
+        return entrateCount > usciteCount ? 'uscita' : 'entrata';
+    }
+
+    /**
+     * Apre il flusso di aggiunta manuale con tipo preferito
+     * @param {string} dateKey - Data ISO
+     * @param {string} preferredType - Tipo da preselezionare
+     */
+    triggerAddEntry(dateKey, preferredType = 'entrata') {
+        this.callbacks.onAddEntry?.({ dateKey, preferredType });
     }
 
     /**

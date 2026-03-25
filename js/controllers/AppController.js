@@ -63,7 +63,7 @@ export class AppController {
                 onPrevWeek: () => this.handlePrevWeek(),
                 onNextWeek: () => this.handleNextWeek(),
                 onEditEntry: (date, index, entry) => this.handleEditEntry(date, index, entry),
-                onAddEntry: (dateKey) => this.handleAddEntry(dateKey),
+                onAddEntry: (payload) => this.handleAddEntry(payload),
                 onExportJSON: () => this.handleExportJSON(),
                 onExportExcel: () => this.handleExportExcel(),
                 onImport: (file) => this.handleImport(file),
@@ -425,10 +425,20 @@ export class AppController {
      * Gestisce aggiunta nuova entry
      * @param {string} [dateKey] - Data preselezionata (opzionale)
      */
-    async handleAddEntry(dateKey = null) {
+    async handleAddEntry(addTarget = null) {
+        let dateKey = null;
+        let preferredType = 'entrata';
+
+        if (typeof addTarget === 'string') {
+            dateKey = addTarget;
+        } else if (addTarget && typeof addTarget === 'object') {
+            dateKey = addTarget.dateKey || null;
+            preferredType = addTarget.preferredType || preferredType;
+        }
+
         const result = await modalManager.openAddEntryModal({
             date: dateKey,
-            type: 'entrata'
+            type: preferredType
         });
 
         if (!result || result.action !== 'add') return;

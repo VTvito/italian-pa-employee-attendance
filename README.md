@@ -13,7 +13,7 @@ Funziona offline, si installa come app e salva i dati solo sul dispositivo.
 - Pausa pranzo automatica: con coppia singola lun-gio 30 minuti fissi, con multi-timbrature conta la pausa reale; venerdì solo oltre 6h lorde
 - Smart working e assenze con ore precompilate
 - Timbrature multiple nello stesso giorno
-- Suggerimento uscita del venerdì in base agli extra accumulati
+- Suggerimento uscita sull'ultimo giorno utile in sede, considerando smart e assenze gia pianificati
 - Export JSON e CSV
 - Funzionamento offline e installazione come PWA
 
@@ -58,7 +58,7 @@ js/
 │   ├── UIManager.js     # Rendering UI, toast, PWA install
 │   └── ModalManager.js  # Modali (edit, add, confirm, clean)
 ├── services/
-│   ├── TimeCalculator.js # Calcoli ore, pause, delta, suggerimento venerdì
+│   ├── TimeCalculator.js # Calcoli ore, pause, delta, suggerimento uscita ultimo giorno utile
 │   ├── WeekNavigator.js  # Navigazione settimane ISO 8601
 │   └── ExportService.js  # Export JSON / CSV, import
 ├── storage/

@@ -143,7 +143,7 @@ const DateUtilsTests = {
         });
 
         await TestRunner.test('getNextWeek - navigazione avanti', () => {
-            const next = DateUtils.getNextWeek(2026, 52);
+            const next = DateUtils.getNextWeek(2026, 53);
             TestRunner.assert.equal(next.year, 2027, 'Anno successivo');
             TestRunner.assert.equal(next.week, 1, 'Prima settimana');
         });
@@ -337,8 +337,8 @@ const TimeCalculatorTests = {
                 { type: 'uscita', time: '17:00' }
             ];
             const result = timeCalculator.calculateDayHours(entries, '2026-02-02');
-            // 4h + 4h - 30min pausa = 7h30m = 450 minuti
-            TestRunner.assert.equal(result.minutes, 450);
+            // 4h + 4h con 1h di pausa reale: nessuna deduzione aggiuntiva
+            TestRunner.assert.equal(result.minutes, 480);
         });
 
         await TestRunner.test('calculateBalance - saldo positivo', () => {

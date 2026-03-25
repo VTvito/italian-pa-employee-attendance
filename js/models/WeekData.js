@@ -5,7 +5,7 @@
  * incluse operazioni CRUD, calcoli e validazione.
  */
 
-import { TimeEntry, SMART_HOURS } from './TimeEntry.js';
+import { TimeEntry } from './TimeEntry.js';
 import { 
     getWeekKey, 
     getWeekNumber,
@@ -86,11 +86,8 @@ export class WeekData {
         if (timeEntry.isSpecial()) {
             // I tipi speciali sostituiscono tutte le entry del giorno
             this.clearDay(dateKey);
-            
-            // Aggiusta le ore per il venerdì
-            if (timeEntry.isSmart() && isFriday(parseDateISO(dateKey))) {
-                timeEntry.hours = SMART_HOURS.FRIDAY;
-            }
+
+            this.normalizeSpecialEntryHours(dateKey, timeEntry);
         }
         
         // Inizializza l'array se non esiste
@@ -121,12 +118,34 @@ export class WeekData {
         // Se cambia il tipo a speciale, rimuovi le altre entry
         if (updates.type && ['smart', 'assente'].includes(updates.type) && !entry.isSpecial()) {
             const updatedEntry = entry.update(updates);
+            this.normalizeSpecialEntryHours(dateKey, updatedEntry);
             this.clearDay(dateKey);
             this.entries.get(dateKey).push(updatedEntry);
             return updatedEntry;
         }
-        
-        return entry.update(updates);
+
+        const updatedEntry = entry.update(updates);
+        this.normalizeSpecialEntryHours(dateKey, updatedEntry);
+        return updatedEntry;
+    }
+
+    /**
+     * Riallinea le ore dei tipi speciali alla regola canonica del giorno
+     * @param {string} dateKey - Data in formato ISO
+     * @param {TimeEntry} timeEntry - Entry da normalizzare
+     * @returns {TimeEntry}
+     */
+    normalizeSpecialEntryHours(dateKey, timeEntry) {
+        if (!timeEntry?.isSpecial()) {
+            return timeEntry;
+        }
+
+        timeEntry.hours = timeEntry.getDefaultHours(
+            timeEntry.type,
+            isFriday(parseDateISO(dateKey))
+        );
+
+        return timeEntry;
     }
 
     /**

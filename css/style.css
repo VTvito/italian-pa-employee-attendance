@@ -525,6 +525,33 @@ body {
     border-color: var(--color-primary);
 }
 
+.day-entry-actions {
+    padding: 8px 4px 2px;
+}
+
+.btn-add-next {
+    width: 100%;
+    min-height: 42px;
+    border: 1px dashed var(--color-primary-light);
+    border-radius: var(--radius-md);
+    background: var(--color-primary-ultra-light);
+    color: var(--color-primary-dark);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn-add-next:hover {
+    background: rgba(0, 122, 255, 0.12);
+    border-color: var(--color-primary);
+}
+
+.btn-add-next:focus-visible {
+    outline: 3px solid var(--color-primary-light);
+    outline-offset: 2px;
+}
 /* Entry Item */
 .entry-item {
     display: flex;

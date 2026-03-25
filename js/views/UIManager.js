@@ -638,6 +638,70 @@ export class UIManager {
     }
 
     /**
+     * Crea le azioni contestuali per un giorno con registrazioni
+     * @param {string} dateKey - Data ISO
+     * @param {Array} entries - Entry del giorno
+     * @returns {HTMLElement|null}
+     */
+    createDayActions(dateKey, entries) {
+        if (this.isSpecialDay(entries)) {
+            return null;
+        }
+
+        const nextType = this.getNextManualEntryType(entries);
+        const actionLabel = nextType === 'uscita'
+            ? '+ Aggiungi nuova uscita'
+            : '+ Aggiungi nuova entrata';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'day-entry-actions';
+
+        const addButton = document.createElement('button');
+        addButton.type = 'button';
+        addButton.className = 'btn-add-next';
+        addButton.textContent = actionLabel;
+        addButton.setAttribute('aria-label', actionLabel);
+        addButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.triggerAddEntry(dateKey, nextType);
+        });
+
+        wrapper.appendChild(addButton);
+
+        return wrapper;
+    }
+
+    /**
+     * Determina se il giorno e di tipo speciale
+     * @param {Array} entries - Entry del giorno
+     * @returns {boolean}
+     */
+    isSpecialDay(entries) {
+        return entries.length === 1
+            && (entries[0].type === 'smart' || entries[0].type === 'assente');
+    }
+
+    /**
+     * Determina il tipo suggerito per aggiunta manuale
+     * @param {Array} entries - Entry del giorno
+     * @returns {string}
+     */
+    getNextManualEntryType(entries) {
+        const entrateCount = entries.filter((entry) => entry.type === 'entrata').length;
+        const usciteCount = entries.filter((entry) => entry.type === 'uscita').length;
+        return entrateCount > usciteCount ? 'uscita' : 'entrata';
+    }
+
+    /**
+     * Apre il flusso di aggiunta manuale con tipo preferito
+     * @param {string} dateKey - Data ISO
+     * @param {string} preferredType - Tipo da preselezionare
+     */
+    triggerAddEntry(dateKey, preferredType = 'entrata') {
+        this.callbacks.onAddEntry?.({ dateKey, preferredType });
+    }
+
+    /**
      * Aggiorna i totali della settimana
      * @param {Object} weekData - Dati settimana
      */

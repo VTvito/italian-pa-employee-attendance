@@ -650,16 +650,6 @@ body {
     line-height: 1.4;
 }
 
-.modal-help {
-    margin-bottom: 12px;
-    padding: 10px 12px;
-    border-radius: var(--radius-sm);
-    background: var(--color-bg-grouped);
-    color: var(--color-text-secondary);
-    font-size: var(--font-size-sm);
-    line-height: 1.4;
-}
-
 /* Friday exit hint */
 .friday-exit-hint {
     display: flex;
@@ -820,16 +810,6 @@ body {
     -webkit-overflow-scrolling: touch;
 }
 
-.modal-small {
-    max-width: 400px;
-}
-
-/* Handle indicator for iOS sheet */
-.modal-content::before {
-    content: '';
-    display: block;
-    width: 36px;
-    height: 5px;
     background: var(--color-text-muted);
     border-radius: var(--radius-full);
     margin: 8px auto 0;

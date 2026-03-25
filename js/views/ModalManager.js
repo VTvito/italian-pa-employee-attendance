@@ -190,7 +190,6 @@ export class ModalManager {
             const timeInput = modal.querySelector('#addTime');
             const timeGroup = modal.querySelector('#addTimeGroup');
             const title = modal.querySelector('#addEntryModalTitle');
-            const help = modal.querySelector('#addEntryHelp');
 
             // Imposta data (default: oggi)
             const today = new Date().toISOString().split('T')[0];
@@ -198,7 +197,7 @@ export class ModalManager {
             
             // Imposta tipo
             typeSelect.value = type;
-            this.updateAddEntryCopy(typeSelect.value, title, help);
+            this.updateAddEntryCopy(typeSelect.value, title);
             
             // Imposta orario default basato sul tipo
             const now = new Date();
@@ -222,7 +221,7 @@ export class ModalManager {
             const typeChangeHandler = () => {
                 const newType = typeSelect.value;
                 this.updateTimeFieldVisibility(newType, timeGroup, timeInput);
-                this.updateAddEntryCopy(newType, title, help);
+                this.updateAddEntryCopy(newType, title);
                 
                 // Aggiorna orario default quando cambia tipo
                 if ((newType === 'entrata' || newType === 'uscita') && !timeInput.value) {
@@ -273,6 +272,8 @@ export class ModalManager {
             const timeInput = modal.querySelector('#editTime');
             const timeGroup = modal.querySelector('#timeGroup');
             const indexInput = modal.querySelector('#editIndex');
+            const now = new Date();
+            const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
             dateInput.value = date;
             typeSelect.value = entry.type;
@@ -285,6 +286,10 @@ export class ModalManager {
             // Listener per cambio tipo
             const typeChangeHandler = () => {
                 this.updateTimeFieldVisibility(typeSelect.value, timeGroup, timeInput);
+
+                if (requiresTime(typeSelect.value) && !timeInput.value) {
+                    timeInput.value = currentTime;
+                }
             };
             typeSelect.addEventListener('change', typeChangeHandler);
 
@@ -313,10 +318,9 @@ export class ModalManager {
      * Aggiorna il copy della modale add per chiarire che si tratta di una nuova registrazione
      * @param {string} type - Tipo selezionato
      * @param {HTMLElement} title - Titolo modale
-     * @param {HTMLElement} help - Testo guida modale
      */
-    updateAddEntryCopy(type, title, help) {
-        if (!title || !help) {
+    updateAddEntryCopy(type, title) {
+        if (!title) {
             return;
         }
 
@@ -328,9 +332,6 @@ export class ModalManager {
         };
 
         title.textContent = titles[type] || '➕ Nuova Registrazione';
-        help.textContent = requiresTime(type)
-            ? 'Stai aggiungendo una nuova registrazione. Se devi correggerne una esistente, usa Correggi sulla riga del giorno.'
-            : 'Stai aggiungendo una nuova giornata speciale. Se vuoi cambiare una registrazione esistente, usa Correggi.';
     }
 
     /**

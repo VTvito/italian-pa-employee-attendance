@@ -586,10 +586,7 @@ export class UIManager {
      */
     createDayActions(dateKey, entries) {
         if (this.isSpecialDay(entries)) {
-            const note = document.createElement('div');
-            note.className = 'day-special-note';
-            note.textContent = 'Giornata speciale: usa Correggi solo se vuoi cambiare tipo o data.';
-            return note;
+            return null;
         }
 
         const nextType = this.getNextManualEntryType(entries);
@@ -610,12 +607,7 @@ export class UIManager {
             this.triggerAddEntry(dateKey, nextType);
         });
 
-        const helper = document.createElement('p');
-        helper.className = 'day-entry-helper';
-        helper.textContent = 'Per modificare una registrazione esistente usa Correggi sulla riga interessata.';
-
         wrapper.appendChild(addButton);
-        wrapper.appendChild(helper);
 
         return wrapper;
     }

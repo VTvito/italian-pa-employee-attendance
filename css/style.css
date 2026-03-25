@@ -526,9 +526,6 @@ body {
 }
 
 .day-entry-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
     padding: 8px 4px 2px;
 }
 
@@ -554,23 +551,6 @@ body {
 .btn-add-next:focus-visible {
     outline: 3px solid var(--color-primary-light);
     outline-offset: 2px;
-}
-
-.day-entry-helper {
-    margin: 0;
-    color: var(--color-text-light);
-    font-size: var(--font-size-xs);
-    line-height: 1.35;
-}
-
-.day-special-note {
-    margin-top: 6px;
-    padding: 10px 12px;
-    border-radius: var(--radius-sm);
-    background: rgba(142, 142, 147, 0.08);
-    color: var(--color-assente-dark);
-    font-size: var(--font-size-xs);
-    line-height: 1.4;
 }
 
 /* Entry Item */

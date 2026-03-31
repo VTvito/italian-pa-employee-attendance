@@ -74,14 +74,17 @@ python -m http.server 8080
 ```
 
 ### Validazione prima di commit
-1. **Errori statici**: usare `get_errors` su tutti i file JS e CSS
-2. **Bracket matching**: `python -c` script per contare `{` vs `}` nei file JS
-3. **Verifica logica**: test Python che simula scenari di calcolo
-4. **Service Worker**: dopo ogni modifica ai file cached, **incrementare `CACHE_NAME`** in `service-worker.js`
-5. **Versione footer**: aggiornare `appVersion` in `index.html` per ogni rilascio
+1. **Identità Git**: verificare `git config --get user.name` e `git config --get user.email` prima di creare commit, soprattutto su macchine con account multipli
+2. **Errori statici**: usare `get_errors` su tutti i file JS e CSS
+3. **Bracket matching**: `python -c` script per contare `{` vs `}` nei file JS
+4. **Verifica logica**: test Python che simula scenari di calcolo
+5. **Service Worker**: dopo ogni modifica ai file cached, **incrementare `CACHE_NAME`** in `service-worker.js`
+6. **Versione footer**: aggiornare `appVersion` in `index.html` per ogni rilascio
 
 ### Deploy
 ```powershell
+git config --get user.name
+git config --get user.email
 git add -A; git status
 git commit -m "Descrizione concisa"
 git push origin main
@@ -113,3 +116,4 @@ git push origin main
 6. **Update PWA**: HTML, JS, CSS e manifest devono preferire la rete per evitare mix tra codice nuovo e vecchio; il SW non deve mai toccare localStorage o IndexedDB
 7. **parseDateISO**: usa `new Date(year, month-1, day)` (locale), non `new Date(str)` (UTC mismatch)
 8. **git push fallisce**: fare sempre `git pull --rebase origin main` e riprovare
+9. **Identità Git sbagliata**: prima di committare in repo personali, controllare sempre `git config --get user.name` e `git config --get user.email` per evitare commit pubblicati con account aziendali o secondari

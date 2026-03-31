@@ -77,6 +77,11 @@ Questo documento raccoglie le lezioni apprese durante lo sviluppo agentico dell'
 - **Soluzione**: `git pull --rebase origin main` poi `git push origin main`.
 - **Regola**: SEMPRE tentare pull --rebase prima di push se fallisce.
 
+### Problema: Commit firmati con account Git sbagliato
+- **Causa**: `git config user.name` / `git config user.email` del repository puntavano a un account aziendale o secondario.
+- **Soluzione**: Verificare sempre l'identità Git locale prima di committare. Se i commit sono già stati pubblicati, riscrivere autore e committer e pubblicare con `git push --force-with-lease`.
+- **Regola**: Nei repository personali controllare sempre `git config --get user.name` e `git config --get user.email` prima di creare nuovi commit.
+
 ### Problema: Dimenticare di committare il service-worker
 - **Causa**: Si modificano i file JS/CSS ma si dimentica di bumpare `CACHE_NAME`.
 - **Soluzione**: Checklist mentale: "Ho toccato file dentro CACHE_URLS? → Bumpa CACHE_NAME".

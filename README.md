@@ -117,6 +117,8 @@ Qualsiasi hosting statico va bene: GitHub Pages, Netlify, Vercel, Cloudflare Pag
 
 Pull request benvenute. Per modifiche sostanziali conviene aprire prima una issue.
 
+Prima di committare da macchine o profili condivisi, verifica che `git config user.name` e `git config user.email` puntino al profilo GitHub personale corretto e non a un account aziendale o secondario.
+
 ---
 
 ## 📄 Licenza

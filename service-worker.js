@@ -17,10 +17,15 @@
  */
 
 // IMPORTANTE: Incrementa questo numero per forzare l'aggiornamento dell'app
-const CACHE_NAME = 'timbra-pa-v28';
+const CACHE_NAME = 'timbra-pa-v29';
 
 // Versione leggibile per logging
-const APP_VERSION = '2.3.9';
+const APP_VERSION = '2.3.10';
+
+// Timeout brevi per evitare che su iPhone una rete assente o instabile
+// faccia sembrare l'app non disponibile offline.
+const NAVIGATION_NETWORK_TIMEOUT_MS = 1800;
+const APP_SHELL_NETWORK_TIMEOUT_MS = 2200;
 
 // Determina il base path per GitHub Pages o localhost
 const BASE_PATH = self.location.pathname.replace('service-worker.js', '');
@@ -71,6 +76,10 @@ const APP_SHELL_PATHS = new Set([
     BASE_PATH + 'manifest.json'
 ]);
 
+const CRITICAL_CACHE_URLS = Array.from(APP_SHELL_PATHS).filter((url) => {
+    return url !== BASE_PATH && url !== BASE_PATH + 'manifest.json';
+});
+
 /**
  * Evento Install - Cache delle risorse statiche
  * 
@@ -83,11 +92,7 @@ self.addEventListener('install', (event) => {
     console.log(`[SW] Install v${APP_VERSION} (${CACHE_NAME})`);
     
     event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then((cache) => {
-                console.log('[SW] Pre-caching risorse...');
-                return cache.addAll(CACHE_URLS);
-            })
+        precacheResources()
             .then(() => {
                 console.log('[SW] Pre-cache completato. In attesa di attivazione utente.');
                 // ⚠️ NON chiamo skipWaiting() qui.
@@ -95,6 +100,7 @@ self.addEventListener('install', (event) => {
             })
             .catch((error) => {
                 console.error('[SW] Pre-cache fallito:', error);
+                throw error;
             })
     );
 });
@@ -166,9 +172,9 @@ self.addEventListener('fetch', (event) => {
                 }
                 return fetchAndCache(event.request);
             })
-            .catch(() => {
+            .catch(async () => {
                 if (event.request.headers.get('accept')?.includes('text/html')) {
-                    return caches.match(BASE_PATH + 'index.html');
+                    return getOfflineNavigationFallback();
                 }
             })
     );
@@ -190,13 +196,84 @@ function isAppShellRequest(request, requestUrl) {
 }
 
 /**
+ * Pre-cache robusto: se fallisce una risorsa secondaria non blocca l'offline,
+ * ma se manca un file core il SW non si installa.
+ * @returns {Promise<void>}
+ */
+async function precacheResources() {
+    const cache = await caches.open(CACHE_NAME);
+    console.log('[SW] Pre-caching risorse...');
+
+    const results = await Promise.allSettled(
+        CACHE_URLS.map((url) => cache.add(url))
+    );
+
+    const failedUrls = results
+        .map((result, index) => result.status === 'rejected' ? CACHE_URLS[index] : null)
+        .filter(Boolean);
+
+    if (failedUrls.length === 0) {
+        return;
+    }
+
+    const criticalFailures = failedUrls.filter((url) => CRITICAL_CACHE_URLS.includes(url));
+
+    if (criticalFailures.length > 0) {
+        throw new Error(`Risorse core non cacheate: ${criticalFailures.join(', ')}`);
+    }
+
+    console.warn('[SW] Risorse secondarie non cacheate:', failedUrls);
+}
+
+/**
+ * Fallback offline per navigazione top-level.
+ * Alcuni browser iOS si comportano meglio con index.html esplicito.
+ * @returns {Promise<Response|undefined>}
+ */
+async function getOfflineNavigationFallback() {
+    const cachedIndex = await caches.match(BASE_PATH + 'index.html');
+    if (cachedIndex) {
+        return cachedIndex;
+    }
+
+    return caches.match(BASE_PATH);
+}
+
+/**
+ * Fetch con timeout breve per evitare attese lunghe prima del fallback cache.
+ * @param {Request} request
+ * @param {number} timeoutMs
+ * @returns {Promise<Response>}
+ */
+async function fetchWithTimeout(request, timeoutMs) {
+    if (typeof AbortController === 'undefined') {
+        return fetch(request, { cache: 'no-store' });
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+        return await fetch(request, {
+            cache: 'no-store',
+            signal: controller.signal
+        });
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+/**
  * Strategia network-first per HTML/JS/CSS/manifest.
  * @param {Request} request
  * @returns {Promise<Response>}
  */
 async function fetchNetworkFirst(request) {
     try {
-        const response = await fetch(request, { cache: 'no-store' });
+        const timeoutMs = request.mode === 'navigate'
+            ? NAVIGATION_NETWORK_TIMEOUT_MS
+            : APP_SHELL_NETWORK_TIMEOUT_MS;
+        const response = await fetchWithTimeout(request, timeoutMs);
 
         if (response.ok) {
             const cache = await caches.open(CACHE_NAME);
@@ -211,7 +288,7 @@ async function fetchNetworkFirst(request) {
         }
 
         if (request.mode === 'navigate') {
-            return caches.match(BASE_PATH + 'index.html');
+            return getOfflineNavigationFallback();
         }
 
         throw error;

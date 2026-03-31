@@ -212,7 +212,7 @@ export class UIManager {
             if (installBanner && (forceShow || !wasDismissedRecently()) && !isStandalone()) {
                 // Adatta il messaggio al dispositivo
                 if (isIOS()) {
-                    installBannerHint.textContent = 'Su iPhone: Condividi → Aggiungi a Home';
+                    installBannerHint.textContent = 'Su iPhone: Condividi → Aggiungi a Home, poi apri l\'app una volta online';
                     installBannerBtn.textContent = 'Guida iPhone';
                     installBannerBtn.style.display = 'block';
                 } else if (!deferredPrompt) {
@@ -368,7 +368,7 @@ export class UIManager {
         iosModalOk?.addEventListener('click', () => {
             hideIOSModal();
             localStorage.setItem(INSTALL_DISMISSED_KEY, Date.now().toString());
-            this.showToast('👍 Segui i passaggi per installare!', 'info');
+            this.showToast('👍 Dopo l\'installazione, apri l\'app una volta con rete per completare l\'offline.', 'info');
         });
         
         // Chiudi modal cliccando fuori

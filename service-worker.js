@@ -17,10 +17,10 @@
  */
 
 // IMPORTANTE: Incrementa questo numero per forzare l'aggiornamento dell'app
-const CACHE_NAME = 'timbra-pa-v29';
+const CACHE_NAME = 'timbra-pa-v30';
 
 // Versione leggibile per logging
-const APP_VERSION = '2.3.10';
+const APP_VERSION = '2.3.11';
 
 // Timeout brevi per evitare che su iPhone una rete assente o instabile
 // faccia sembrare l'app non disponibile offline.

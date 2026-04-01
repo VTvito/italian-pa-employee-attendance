@@ -371,16 +371,21 @@ export class TimeCalculator {
     }
 
     /**
-     * Analizza lo stato di un giorno con timbrature aperte/chiuse
+     * Analizza lo stato di un giorno con timbrature aperte o sbilanciate
      * @param {Array} entries - Array di entry del giorno
      * @returns {{
      *   hasEntrata: boolean,
+     *   hasUscita: boolean,
      *   hasOpenSession: boolean,
+     *   hasUnpairedExit: boolean,
      *   isComplete: boolean,
      *   completedWorkedMinutes: number,
      *   breakMinutes: number,
+     *   completePairCount: number,
      *   finalPairCount: number,
-     *   openEntryMinutes: number|null
+     *   openEntryMinutes: number|null,
+     *   unpairedExitMinutes: number|null,
+     *   lastPairedExitMinutes: number|null
      * }}
      */
     getOpenDayState(entries) {
@@ -409,31 +414,79 @@ export class TimeCalculator {
         }
 
         const hasOpenSession = entrate.length > uscite.length;
+        const hasUnpairedExit = uscite.length > entrate.length;
         const openEntryIndex = uscite.length;
         const openEntryMinutes = hasOpenSession
             ? parseTimeToMinutes(entrate[openEntryIndex])
             : null;
+        const unpairedExitIndex = entrate.length;
+        const unpairedExitMinutes = hasUnpairedExit
+            ? parseTimeToMinutes(uscite[unpairedExitIndex])
+            : null;
+        const lastPairedExitMinutes = completePairs > 0
+            ? parseTimeToMinutes(uscite[completePairs - 1])
+            : null;
 
         if (hasOpenSession && completePairs > 0) {
-            const lastExitMinutes = parseTimeToMinutes(uscite[completePairs - 1]);
             if (
-                lastExitMinutes !== null
+                lastPairedExitMinutes !== null
                 && openEntryMinutes !== null
-                && openEntryMinutes > lastExitMinutes
+                && openEntryMinutes > lastPairedExitMinutes
             ) {
-                breakMinutes += openEntryMinutes - lastExitMinutes;
+                breakMinutes += openEntryMinutes - lastPairedExitMinutes;
             }
         }
 
         return {
             hasEntrata: entrate.length > 0,
+            hasUscita: uscite.length > 0,
             hasOpenSession,
+            hasUnpairedExit,
             isComplete: entrate.length > 0 && entrate.length === uscite.length,
             completedWorkedMinutes,
             breakMinutes,
-            finalPairCount: completePairs + (hasOpenSession ? 1 : 0),
-            openEntryMinutes
+            completePairCount: completePairs,
+            finalPairCount: completePairs + ((hasOpenSession || hasUnpairedExit) ? 1 : 0),
+            openEntryMinutes,
+            unpairedExitMinutes,
+            lastPairedExitMinutes
         };
+    }
+
+    /**
+     * Calcola i minuti netti risultanti aggiungendo una coppia suggerita
+     * @param {Object} state - Stato del giorno
+     * @param {string} dateKey - Data in formato ISO
+     * @param {number} entryMinutes - Minuti entrata
+     * @param {number} exitMinutes - Minuti uscita
+     * @returns {number|null}
+     */
+    calculateSuggestedPairNetMinutes(state, dateKey, entryMinutes, exitMinutes) {
+        if (entryMinutes === null || exitMinutes === null || exitMinutes <= entryMinutes) {
+            return null;
+        }
+
+        if (
+            state.lastPairedExitMinutes !== null
+            && entryMinutes < state.lastPairedExitMinutes
+        ) {
+            return null;
+        }
+
+        const pairWorkedMinutes = exitMinutes - entryMinutes;
+        const extraBreakMinutes = state.hasUnpairedExit && state.lastPairedExitMinutes !== null
+            ? Math.max(0, entryMinutes - state.lastPairedExitMinutes)
+            : 0;
+        const totalWorkedMinutes = state.completedWorkedMinutes + pairWorkedMinutes;
+        const totalBreakMinutes = state.breakMinutes + extraBreakMinutes;
+        const requiredPauseMinutes = this.getRequiredPauseMinutes(
+            totalWorkedMinutes,
+            dateKey,
+            state.finalPairCount,
+            totalBreakMinutes
+        );
+
+        return Math.max(0, totalWorkedMinutes - requiredPauseMinutes);
     }
 
     /**
@@ -449,24 +502,53 @@ export class TimeCalculator {
             return null;
         }
 
-        let requiredPauseMinutes = this.getRequiredPauseMinutes(
-            targetNetMinutes,
-            dateKey,
-            state.finalPairCount,
-            state.breakMinutes
-        );
-        let requiredGrossMinutes = targetNetMinutes + requiredPauseMinutes;
+        for (let exitMinutes = state.openEntryMinutes + 1; exitMinutes <= 1439; exitMinutes++) {
+            const netMinutes = this.calculateSuggestedPairNetMinutes(
+                state,
+                dateKey,
+                state.openEntryMinutes,
+                exitMinutes
+            );
 
-        requiredPauseMinutes = this.getRequiredPauseMinutes(
-            requiredGrossMinutes,
-            dateKey,
-            state.finalPairCount,
-            state.breakMinutes
-        );
-        requiredGrossMinutes = targetNetMinutes + requiredPauseMinutes;
+            if (netMinutes === targetNetMinutes) {
+                return minutesToTime(exitMinutes);
+            }
+        }
 
-        const openSessionMinutes = Math.max(0, requiredGrossMinutes - state.completedWorkedMinutes);
-        return minutesToTime(state.openEntryMinutes + openSessionMinutes);
+        return null;
+    }
+
+    /**
+     * Stima l'orario di ingresso quando e' gia stata inserita l'uscita finale
+     * @param {Array} entries - Array di entry del giorno
+     * @param {string} dateKey - Data in formato ISO
+     * @param {number} targetNetMinutes - Minuti netti necessari nel giorno
+     * @returns {string|null}
+     */
+    estimateOpenDayEntryTime(entries, dateKey, targetNetMinutes) {
+        const state = this.getOpenDayState(entries);
+        if (!state.hasUnpairedExit || state.unpairedExitMinutes === null) {
+            return null;
+        }
+
+        const firstCandidateMinutes = state.lastPairedExitMinutes !== null
+            ? state.lastPairedExitMinutes
+            : 0;
+
+        for (let entryMinutes = state.unpairedExitMinutes - 1; entryMinutes >= firstCandidateMinutes; entryMinutes--) {
+            const netMinutes = this.calculateSuggestedPairNetMinutes(
+                state,
+                dateKey,
+                entryMinutes,
+                state.unpairedExitMinutes
+            );
+
+            if (netMinutes === targetNetMinutes) {
+                return minutesToTime(entryMinutes);
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -476,10 +558,14 @@ export class TimeCalculator {
      * @param {string[]} [workDateKeys=[]] - Giorni lavorativi ordinabili della settimana
      * @returns {{
      *   exitTime: string|null,
+    *   entryTime: string|null,
+    *   recordedExitTime: string|null,
      *   targetDayMinutes: number,
      *   targetDateKey: string,
      *   hasEntrata: boolean,
+    *   hasUscita: boolean,
      *   hasOpenSession: boolean,
+    *   hasUnpairedExit: boolean,
      *   hasCompleteDay: boolean,
      *   isFridayTarget: boolean
      * }|null}
@@ -526,13 +612,23 @@ export class TimeCalculator {
         const exitTime = targetDayState.hasOpenSession
             ? this.estimateOpenDayExitTime(targetEntries, targetDateKey, targetDayMinutes)
             : null;
+        const entryTime = targetDayState.hasUnpairedExit
+            ? this.estimateOpenDayEntryTime(targetEntries, targetDateKey, targetDayMinutes)
+            : null;
+        const recordedExitTime = targetDayState.unpairedExitMinutes !== null
+            ? minutesToTime(targetDayState.unpairedExitMinutes)
+            : null;
 
         return {
             exitTime,
+            entryTime,
+            recordedExitTime,
             targetDayMinutes,
             targetDateKey,
             hasEntrata: targetDayState.hasEntrata,
+            hasUscita: targetDayState.hasUscita,
             hasOpenSession: targetDayState.hasOpenSession,
+            hasUnpairedExit: targetDayState.hasUnpairedExit,
             hasCompleteDay: targetDayState.isComplete,
             isFridayTarget: isFriday(parseDateISO(targetDateKey))
         };

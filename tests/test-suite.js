@@ -414,6 +414,33 @@ const TimeCalculatorTests = {
             TestRunner.assert.equal(suggestion.targetDayMinutes, 390);
             TestRunner.assert.equal(suggestion.exitTime, '15:00');
         });
+
+        await TestRunner.test('calculateFridayExitSuggestion - con uscita inserita suggerisce anche l ingresso', () => {
+            const weekEntries = {
+                '2026-03-09': [{ type: 'smart', hours: 7.5 }],
+                '2026-03-10': [
+                    { type: 'entrata', time: '08:00' },
+                    { type: 'uscita', time: '17:00' }
+                ],
+                '2026-03-11': [{ type: 'uscita', time: '15:00' }],
+                '2026-03-12': [{ type: 'assente', hours: 0 }],
+                '2026-03-13': [{ type: 'smart', hours: 6 }]
+            };
+
+            const suggestion = timeCalculator.calculateFridayExitSuggestion(weekEntries, [
+                '2026-03-09',
+                '2026-03-10',
+                '2026-03-11',
+                '2026-03-12',
+                '2026-03-13'
+            ]);
+
+            TestRunner.assert.equal(suggestion.targetDateKey, '2026-03-11');
+            TestRunner.assert.equal(suggestion.targetDayMinutes, 390);
+            TestRunner.assert.equal(suggestion.recordedExitTime, '15:00');
+            TestRunner.assert.equal(suggestion.entryTime, '08:00');
+            TestRunner.assert.equal(suggestion.exitTime, null);
+        });
     }
 };
 

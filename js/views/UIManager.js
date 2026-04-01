@@ -410,7 +410,7 @@ export class UIManager {
         // Render giorni
         this.renderDays(weekInfo.days, weekData);
 
-        // Suggerimento uscita ultimo giorno utile in presenza
+        // Suggerimento orario ultimo giorno utile in presenza
         this.renderWorkdayExitHint(weekInfo, weekData);
 
         // Calcola e mostra totali
@@ -811,7 +811,7 @@ export class UIManager {
     }
 
     /**
-     * Mostra suggerimento uscita per l'ultimo giorno utile in presenza
+     * Mostra suggerimento orario per l'ultimo giorno utile in presenza
      * @param {Object} weekInfo - Info settimana
      * @param {Object} weekData - Dati settimana
      */
@@ -860,16 +860,26 @@ export class UIManager {
             hint.innerHTML = `
                 <span class="friday-hint-icon">🕐</span>
                 <span class="friday-hint-text">
-                    Ultimo giorno utile in sede: <strong>${targetDayLabel}</strong> → 
-                    Ore da coprire: <strong>${targetFormatted}</strong> → 
+                    Ultimo giorno utile in sede: <strong>${targetDayLabel}</strong> →
+                    Ore da coprire: <strong>${targetFormatted}</strong> →
                     Uscita suggerita: <strong>${suggestion.exitTime}</strong>
                 </span>
             `;
-        } else if (!suggestion.hasEntrata && suggestion.targetDayMinutes > 0) {
+        } else if (suggestion.entryTime && suggestion.recordedExitTime) {
+            hint.innerHTML = `
+                <span class="friday-hint-icon">🕐</span>
+                <span class="friday-hint-text">
+                    Ultimo giorno utile in sede: <strong>${targetDayLabel}</strong> →
+                    Ore da coprire: <strong>${targetFormatted}</strong> →
+                    Uscita impostata: <strong>${suggestion.recordedExitTime}</strong> →
+                    Ingresso suggerito: <strong>${suggestion.entryTime}</strong>
+                </span>
+            `;
+        } else if (!suggestion.hasEntrata && !suggestion.hasUscita && suggestion.targetDayMinutes > 0) {
             hint.innerHTML = `
                 <span class="friday-hint-icon">💡</span>
                 <span class="friday-hint-text">
-                    Ultimo giorno utile in sede: <strong>${targetDayLabel}</strong> → 
+                    Ultimo giorno utile in sede: <strong>${targetDayLabel}</strong> →
                     Ore da coprire: <strong>${targetFormatted}</strong>
                 </span>
             `;

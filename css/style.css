@@ -1074,6 +1074,41 @@ body {
 }
 
 /* ============================================
+   Offline Banner - Indicatore assenza connessione
+   ============================================ */
+#offlineBanner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    animation: slideDownBanner 0.3s ease-out;
+}
+
+.offline-banner-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 16px;
+    background: #64748b;
+    color: white;
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+
+.offline-banner-icon {
+    font-size: 1em;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.offline-banner-text {
+    font-weight: 500;
+}
+
+/* ============================================
    Responsive - Desktop
    ============================================ */
 @media (min-width: 600px) {

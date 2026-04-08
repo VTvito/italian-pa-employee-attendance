@@ -11,6 +11,10 @@ import { eventBus, EVENTS } from './utils/EventBus.js';
 // Istanza globale del controller (per debug)
 let app = null;
 
+// Timestamp dell'ultimo controllo aggiornamenti SW (evita chiamate eccessive offline)
+let lastUpdateCheckTime = 0;
+const UPDATE_CHECK_MIN_INTERVAL_MS = 10 * 60 * 1000; // min 10 minuti tra un check e l'altro
+
 /**
  * Inizializza l'applicazione
  */
@@ -28,12 +32,25 @@ async function initApp() {
         // Registra Service Worker per PWA
         await registerServiceWorker();
 
+        // Aggiorna la UI in base alla connettività attuale
+        updateOfflineBanner();
+
         console.log('✅ Applicazione inizializzata');
 
     } catch (error) {
         console.error('❌ Errore inizializzazione:', error);
         showFatalError(error);
     }
+}
+
+/**
+ * Mostra o nasconde il banner offline in base a navigator.onLine.
+ * Il banner usa display:none/block per evitare reflow durante la fase iniziale.
+ */
+function updateOfflineBanner() {
+    const banner = document.getElementById('offlineBanner');
+    if (!banner) return;
+    banner.style.display = navigator.onLine ? 'none' : 'block';
 }
 
 /**
@@ -101,10 +118,14 @@ async function registerServiceWorker() {
         // Controlla aggiornamenti all'avvio
         checkForUpdates(registration);
 
-        // Controlla anche quando l'app torna in primo piano
+        // Controlla anche quando l'app torna in primo piano, ma solo se online
+        // e se è passato abbastanza tempo dall'ultimo check (evita flood su rete scarsa)
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                checkForUpdates(registration);
+            if (document.visibilityState === 'visible' && navigator.onLine) {
+                const now = Date.now();
+                if (now - lastUpdateCheckTime >= UPDATE_CHECK_MIN_INTERVAL_MS) {
+                    checkForUpdates(registration);
+                }
             }
         });
 
@@ -125,6 +146,7 @@ async function registerServiceWorker() {
  */
 async function checkForUpdates(registration) {
     try {
+        lastUpdateCheckTime = Date.now();
         console.log('[App] Controllo aggiornamenti...');
         await registration.update();
     } catch (error) {
@@ -286,6 +308,14 @@ if (document.readyState === 'loading') {
 } else {
     initApp();
 }
+
+// Aggiorna il banner offline al cambiamento di connettività
+window.addEventListener('online', () => {
+    updateOfflineBanner();
+});
+window.addEventListener('offline', () => {
+    updateOfflineBanner();
+});
 
 // Esporta per debug da console
 window.__app = () => app;

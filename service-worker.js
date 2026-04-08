@@ -17,10 +17,10 @@
  */
 
 // IMPORTANTE: Incrementa questo numero per forzare l'aggiornamento dell'app
-const CACHE_NAME = 'timbra-pa-v30';
+const CACHE_NAME = 'timbra-pa-v31';
 
 // Versione leggibile per logging
-const APP_VERSION = '2.3.11';
+const APP_VERSION = '2.3.12';
 
 // Timeout brevi per evitare che su iPhone una rete assente o instabile
 // faccia sembrare l'app non disponibile offline.
@@ -241,25 +241,41 @@ async function getOfflineNavigationFallback() {
 
 /**
  * Fetch con timeout breve per evitare attese lunghe prima del fallback cache.
+ * 
+ * Usa Promise.race come meccanismo primario di timeout: questo garantisce che
+ * il timeout scatti sempre, anche su iOS/Safari dove AbortController.abort()
+ * nel contesto del Service Worker può essere un no-op.
+ * AbortController viene comunque usato per tentare di cancellare la richiesta
+ * sottostante e liberare risorse di rete.
+ * 
  * @param {Request} request
  * @param {number} timeoutMs
  * @returns {Promise<Response>}
  */
 async function fetchWithTimeout(request, timeoutMs) {
-    if (typeof AbortController === 'undefined') {
-        return fetch(request, { cache: 'no-store' });
+    // Promise che rigetta dopo timeoutMs — il meccanismo di timeout affidabile
+    const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('SW_TIMEOUT')), timeoutMs)
+    );
+
+    let fetchPromise;
+    let controller;
+
+    if (typeof AbortController !== 'undefined') {
+        controller = new AbortController();
+        fetchPromise = fetch(request, { cache: 'no-store', signal: controller.signal });
+    } else {
+        fetchPromise = fetch(request, { cache: 'no-store' });
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
     try {
-        return await fetch(request, {
-            cache: 'no-store',
-            signal: controller.signal
-        });
-    } finally {
-        clearTimeout(timeoutId);
+        return await Promise.race([fetchPromise, timeoutPromise]);
+    } catch (e) {
+        // Tenta di cancellare la richiesta pendente per liberare risorse
+        if (controller) {
+            try { controller.abort(); } catch (_) {}
+        }
+        throw e;
     }
 }
 
@@ -278,6 +294,14 @@ async function fetchNetworkFirst(request) {
         if (response.ok) {
             const cache = await caches.open(CACHE_NAME);
             cache.put(request, response.clone());
+            return response;
+        }
+
+        // Risposta non-ok dalla rete (es. 503, 404): preferire la cache
+        // per non mostrare una pagina di errore quando abbiamo una versione cachata.
+        const cachedOnError = await caches.match(request);
+        if (cachedOnError) {
+            return cachedOnError;
         }
 
         return response;

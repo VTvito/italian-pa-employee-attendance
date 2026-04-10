@@ -10,7 +10,7 @@ Funziona offline, si installa come app e salva i dati solo sul dispositivo.
 ## ✨ Funzionalità
 
 - 36 ore settimanali con saldo aggiornato in tempo reale
-- Pausa pranzo automatica: con coppia singola lun-gio 30 minuti fissi, con multi-timbrature conta la pausa reale; venerdì solo oltre 6h lorde
+- Pausa pranzo automatica: con coppia singola lun-gio 30 minuti fissi, con multi-timbrature conta la pausa reale; venerdì nessuna pausa automatica, anche oltre 6h
 - Smart working e assenze con ore precompilate
 - Timbrature multiple nello stesso giorno, con aggiunta manuale guidata dalla card del giorno
 - Suggerimento ingresso/uscita sull'ultimo giorno utile in sede, considerando smart e assenze gia pianificati
@@ -97,7 +97,6 @@ Le costanti principali sono in [js/services/TimeCalculator.js](js/services/TimeC
 export const CONFIG = {
     WEEKLY_TARGET_HOURS: 36,
     PAUSE_MINUTES: 30,
-    PAUSE_THRESHOLD_HOURS: 6,
     SMART_HOURS_DEFAULT: 7.5,
     SMART_HOURS_FRIDAY: 6,
     DAILY_TARGET_HOURS: 7.5,

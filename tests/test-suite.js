@@ -94,6 +94,104 @@ const TestRunner = {
     }
 };
 
+function isStandaloneTestPage() {
+    return window.location.pathname.includes('/tests/');
+}
+
+function getAppRelativePath(relativePath) {
+    const normalizedPath = relativePath.replace(/^\.?\//, '');
+    return `${isStandaloneTestPage() ? '../' : './'}${normalizedPath}`;
+}
+
+async function importAppModule(relativePath) {
+    return import(getAppRelativePath(relativePath));
+}
+
+async function waitForValue(getValue, timeoutMs = 10000, intervalMs = 50) {
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < timeoutMs) {
+        const value = getValue();
+        if (value) {
+            return value;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+
+    return null;
+}
+
+let appTestContextPromise = null;
+
+async function getAppTestContext() {
+    if (!isStandaloneTestPage()) {
+        const app = await waitForValue(() => {
+            const appInstance = window.__app?.();
+            return appInstance?.isInitialized ? appInstance : null;
+        });
+
+        if (!app) {
+            throw new Error('Timeout inizializzazione app');
+        }
+
+        return {
+            app,
+            appWindow: window,
+            appDocument: document
+        };
+    }
+
+    if (!appTestContextPromise) {
+        appTestContextPromise = (async () => {
+            let iframe = document.getElementById('appTestFrame');
+            let needsLoadWait = false;
+
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = 'appTestFrame';
+                iframe.src = `${getAppRelativePath('index.html')}?testContext=integration`;
+                iframe.title = 'App context for integration tests';
+                iframe.style.cssText = 'position:absolute;left:-9999px;top:0;width:1280px;height:900px;border:0;';
+                document.body.appendChild(iframe);
+                needsLoadWait = true;
+            }
+
+            const iframeUrl = iframe.contentWindow?.location?.href || '';
+            if (!needsLoadWait && !iframeUrl.includes('testContext=integration')) {
+                needsLoadWait = true;
+            }
+
+            if (needsLoadWait || !iframe.contentWindow?.document?.readyState || iframe.contentWindow.document.readyState !== 'complete') {
+                await new Promise((resolve, reject) => {
+                    iframe.addEventListener('load', resolve, { once: true });
+                    iframe.addEventListener('error', () => reject(new Error('Impossibile caricare index.html per i test integrazione')), { once: true });
+                });
+            }
+
+            const appWindow = iframe.contentWindow;
+            const appDocument = appWindow?.document;
+
+            if (!appWindow || !appDocument) {
+                throw new Error('Contesto iframe non disponibile');
+            }
+
+            const app = await waitForValue(() => {
+                const appInstance = appWindow.__app?.();
+                return appInstance?.isInitialized ? appInstance : null;
+            });
+
+            if (!app) {
+                throw new Error('Timeout inizializzazione app iframe');
+            }
+
+            return { app, appWindow, appDocument };
+        })();
+    }
+
+    return appTestContextPromise;
+}
+
 // ============================================
 // TEST SUITE: DateUtils
 // ============================================
@@ -103,7 +201,7 @@ const DateUtilsTests = {
         console.log('\n📅 Testing DateUtils...');
         
         // Import moduli (se in browser con ES modules già caricati)
-        const DateUtils = window.__dateUtils || await import('./js/utils/DateUtils.js');
+        const DateUtils = window.__dateUtils || await importAppModule('js/utils/DateUtils.js');
 
         await TestRunner.test('getWeekNumber - data nota', () => {
             // 3 Febbraio 2026 è nella settimana 6
@@ -158,7 +256,7 @@ const ValidatorsTests = {
     async run() {
         console.log('\n✅ Testing Validators...');
         
-        const Validators = window.__validators || await import('./js/utils/Validators.js');
+        const Validators = window.__validators || await importAppModule('js/utils/Validators.js');
 
         await TestRunner.test('validateTime - formato valido HH:MM', () => {
             TestRunner.assert.true(Validators.validateTime('08:30').valid);
@@ -229,7 +327,7 @@ const TimeCalculatorTests = {
         console.log('\n⏱️ Testing TimeCalculator...');
         
         const { timeCalculator, CONFIG } = window.__timeCalculator || 
-            await import('./js/services/TimeCalculator.js');
+            await importAppModule('js/services/TimeCalculator.js');
 
         await TestRunner.test('CONFIG - valori corretti', () => {
             TestRunner.assert.equal(CONFIG.WEEKLY_TARGET_HOURS, 36);
@@ -306,15 +404,28 @@ const TimeCalculatorTests = {
             TestRunner.assert.equal(result.breakMinutes, 10);
         });
 
-        await TestRunner.test('calculateDayHours - venerdì mantiene pausa piena oltre 6h', () => {
+        await TestRunner.test('calculateDayHours - venerdì non applica pause automatiche oltre 6h', () => {
             const entries = [
                 { type: 'entrata', time: '08:00' },
                 { type: 'uscita', time: '14:15' }
             ];
             const result = timeCalculator.calculateDayHours(entries, '2026-02-06'); // Venerdì
-            // Regola conservativa: oltre 6h il venerdì applica ancora 30m
-            TestRunner.assert.equal(result.minutes, 345);
-            TestRunner.assert.equal(result.breakMinutes, 30);
+            // 6h15m lorde -> nessuna pausa automatica -> 6h15m nette
+            TestRunner.assert.equal(result.minutes, 375);
+            TestRunner.assert.equal(result.breakMinutes, 0);
+        });
+
+        await TestRunner.test('calculateDayHours - multi-coppia venerdì non integra pause reali mancanti oltre 6h', () => {
+            const entries = [
+                { type: 'entrata', time: '08:00' },
+                { type: 'uscita', time: '12:00' },
+                { type: 'entrata', time: '12:10' },
+                { type: 'uscita', time: '14:40' }
+            ];
+            const result = timeCalculator.calculateDayHours(entries, '2026-02-06'); // Venerdì
+            // 6h30m lavorate con 10m di pausa reale -> nessuna integrazione automatica
+            TestRunner.assert.equal(result.minutes, 390);
+            TestRunner.assert.equal(result.breakMinutes, 10);
         });
 
         await TestRunner.test('calculateDayHours - smart working', () => {
@@ -362,7 +473,7 @@ const TimeCalculatorTests = {
             TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(300, '2026-02-02', 1, 0), 30);
             TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(315, '2026-02-02', 2, 60), 0);
             TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(360, '2026-02-06', 1, 0), 0);
-            TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(375, '2026-02-06', 1, 0), 30);
+            TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(375, '2026-02-06', 1, 0), 0);
         });
 
         await TestRunner.test('calculateWeekTotal - settimana reale allineata al caso aziendale', () => {
@@ -415,6 +526,32 @@ const TimeCalculatorTests = {
             TestRunner.assert.equal(suggestion.exitTime, '15:00');
         });
 
+        await TestRunner.test('calculateFridayExitSuggestion - venerdì non aggiunge pausa oltre 6h', () => {
+            const weekEntries = {
+                '2026-03-09': [{ type: 'smart', hours: 7.5 }],
+                '2026-03-10': [{ type: 'smart', hours: 7.5 }],
+                '2026-03-11': [{ type: 'smart', hours: 7.5 }],
+                '2026-03-12': [
+                    { type: 'entrata', time: '08:00' },
+                    { type: 'uscita', time: '15:30' }
+                ],
+                '2026-03-13': [{ type: 'entrata', time: '08:00' }]
+            };
+
+            const suggestion = timeCalculator.calculateFridayExitSuggestion(weekEntries, [
+                '2026-03-09',
+                '2026-03-10',
+                '2026-03-11',
+                '2026-03-12',
+                '2026-03-13'
+            ]);
+
+            TestRunner.assert.equal(suggestion.targetDateKey, '2026-03-13');
+            TestRunner.assert.equal(suggestion.targetDayMinutes, 390);
+            TestRunner.assert.equal(suggestion.exitTime, '14:30');
+            TestRunner.assert.true(suggestion.isFridayTarget);
+        });
+
         await TestRunner.test('calculateFridayExitSuggestion - con uscita inserita suggerisce anche l ingresso', () => {
             const weekEntries = {
                 '2026-03-09': [{ type: 'smart', hours: 7.5 }],
@@ -452,7 +589,7 @@ const TimeEntryTests = {
     async run() {
         console.log('\n📝 Testing TimeEntry Model...');
         
-        const { TimeEntry } = window.__timeEntry || await import('./js/models/TimeEntry.js');
+        const { TimeEntry } = window.__timeEntry || await importAppModule('js/models/TimeEntry.js');
 
         await TestRunner.test('createEntrata - crea entry entrata', () => {
             const entry = TimeEntry.createEntrata('08:30');
@@ -515,8 +652,8 @@ const WeekDataTests = {
     async run() {
         console.log('\n📆 Testing WeekData Model...');
         
-        const { WeekData } = window.__weekData || await import('./js/models/WeekData.js');
-        const { TimeEntry } = window.__timeEntry || await import('./js/models/TimeEntry.js');
+        const { WeekData } = window.__weekData || await importAppModule('js/models/WeekData.js');
+        const { TimeEntry } = window.__timeEntry || await importAppModule('js/models/TimeEntry.js');
 
         await TestRunner.test('constructor - inizializza giorni lavorativi', () => {
             const week = new WeekData(2026, 6);
@@ -627,7 +764,7 @@ const StorageTests = {
         });
 
         await TestRunner.test('StorageManager - loadAllData preferisce localStorage (fix bug)', async () => {
-            const { StorageManager } = await import('./js/storage/StorageManager.js');
+            const { StorageManager } = await importAppModule('js/storage/StorageManager.js');
             const mgr = new StorageManager();
             await mgr.init();
 
@@ -660,31 +797,31 @@ const IntegrationTests = {
     async run() {
         console.log('\n🔗 Testing Integration...');
 
+        const context = await getAppTestContext();
+
         await TestRunner.test('App instance - è inizializzata', () => {
-            const app = window.__app?.();
-            TestRunner.assert.true(app !== null && app !== undefined);
+            TestRunner.assert.true(context.app !== null && context.app !== undefined);
+            TestRunner.assert.true(context.app.isInitialized);
         });
 
         await TestRunner.test('App - storage inizializzato', () => {
-            const app = window.__app?.();
-            TestRunner.assert.true(app?.storage !== null);
+            TestRunner.assert.true(context.app?.storage !== null);
         });
 
         await TestRunner.test('App - navigator inizializzato', () => {
-            const app = window.__app?.();
-            TestRunner.assert.true(app?.navigator !== null);
+            TestRunner.assert.true(context.app?.navigator !== null);
         });
 
         await TestRunner.test('DOM - elementi UI presenti', () => {
-            TestRunner.assert.true(document.getElementById('weekDays') !== null);
-            TestRunner.assert.true(document.getElementById('entrataBtn') !== null);
-            TestRunner.assert.true(document.getElementById('uscitaBtn') !== null);
-            TestRunner.assert.true(document.getElementById('totalHours') !== null);
+            TestRunner.assert.true(context.appDocument.getElementById('weekDays') !== null);
+            TestRunner.assert.true(context.appDocument.getElementById('entrataBtn') !== null);
+            TestRunner.assert.true(context.appDocument.getElementById('uscitaBtn') !== null);
+            TestRunner.assert.true(context.appDocument.getElementById('totalHours') !== null);
         });
 
         await TestRunner.test('DOM - modali presenti', () => {
-            TestRunner.assert.true(document.getElementById('editModal') !== null);
-            TestRunner.assert.true(document.getElementById('confirmModal') !== null);
+            TestRunner.assert.true(context.appDocument.getElementById('editModal') !== null);
+            TestRunner.assert.true(context.appDocument.getElementById('confirmModal') !== null);
         });
     }
 };

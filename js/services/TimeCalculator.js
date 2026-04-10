@@ -14,8 +14,7 @@ import { isFriday, parseDateISO } from '../utils/DateUtils.js';
 export const CONFIG = {
     WEEKLY_TARGET_HOURS: 36,           // Ore settimanali target
     WEEKLY_TARGET_MINUTES: 36 * 60,    // In minuti
-    PAUSE_MINUTES: 30,                 // Pausa automatica massima
-    PAUSE_THRESHOLD_HOURS: 6,          // Soglia per applicare pausa
+    PAUSE_MINUTES: 30,                 // Pausa automatica lun-gio
     SMART_HOURS_DEFAULT: 7.5,          // Ore Smart lun-gio
     SMART_HOURS_FRIDAY: 6,             // Ore Smart venerdì
     DAILY_TARGET_HOURS: 7.5,           // Ore giornaliere target lun-gio (7h30m)
@@ -172,8 +171,7 @@ export class TimeCalculator {
         }
 
         if (isFriday(parseDateISO(dateKey))) {
-            const pauseThresholdMinutes = this.hoursToMinutes(CONFIG.PAUSE_THRESHOLD_HOURS);
-            return workedMinutes > pauseThresholdMinutes ? CONFIG.PAUSE_MINUTES : 0;
+            return 0;
         }
 
         return CONFIG.PAUSE_MINUTES;

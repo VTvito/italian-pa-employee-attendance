@@ -3,7 +3,7 @@
 PWA per tracciare le timbrature dei dipendenti pubblici italiani.
 Funziona offline, si installa come app e salva i dati solo sul dispositivo.
 
-![Screenshot App](docs/screenshot.svg)
+![Screenshot App](docs/screenshot-mobile.png)
 
 ---
 

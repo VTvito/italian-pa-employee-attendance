@@ -27,6 +27,11 @@ Questo documento raccoglie le lezioni apprese durante lo sviluppo agentico dell'
 - **Causa**: Il fallback HTML usava `/index.html` (path assoluto) anziché il path relativo per GitHub Pages.
 - **Soluzione**: Usare `BASE_PATH + 'index.html'` per il fallback, dove `BASE_PATH` è derivato dal path del SW stesso.
 
+### Problema: Avvio lento offline con ES Modules
+- **Causa**: I moduli ES sono caricati tramite import chain (app.js → AppController → services → adapters). Con strategia network-first, ogni livello del waterfall attendeva il timeout di rete (fino a 2.2s) prima di servire dalla cache. Con ~4 livelli, l'app impiegava fino a 8+ secondi per avviarsi offline.
+- **Soluzione**: (1) `<link rel="modulepreload">` in `index.html` per tutti i moduli JS — elimina il waterfall, tutti i fetch partono in parallelo dal parsing dell'HTML. (2) `navigator.onLine` check nel SW `fetchNetworkFirst` — se il browser segnala offline, servi dalla cache senza provare la rete. (3) Timeout ridotti da 1.8s/2.2s a 1.2s/1.5s come protezione per i casi in cui `navigator.onLine` è inaffidabile (iOS).
+- **Regola**: Ogni nuovo modulo JS aggiunto al progetto va anche aggiunto come `<link rel="modulepreload">` in `index.html` oltre che in `CACHE_URLS` del SW.
+
 ## 2. Dati Utente & Storage
 
 ### Problema: Confusione "backup automatico"
@@ -45,8 +50,8 @@ Questo documento raccoglie le lezioni apprese durante lo sviluppo agentico dell'
 
 ### Problema: Regola pausa pranzo aziendale diversa da quella inizialmente modellata
 - **Causa**: La logica era stata semplificata troppo, deducendo 30 minuti anche quando la pausa reale era già stata registrata con multi-timbrature.
-- **Soluzione**: Con coppia singola da lunedì a giovedì dedurre sempre 30 minuti se esiste lavoro registrato. Con multi-timbrature usare la pausa reale e dedurre solo l'eventuale differenza per arrivare a 30 minuti minimi. Il venerdì non applicare mai pause automatiche.
-- **Regola**: Le multi-timbrature contano come pausa reale; non dedurre altri 30 minuti se il break totale è già almeno di 30 minuti. Il venerdì eventuali pause incidono solo se l'utente le ha registrate davvero con più timbrature. `isFriday(parseDateISO(dateKey))` continua a distinguere target giornaliero e regola pausa del venerdì.
+- **Soluzione**: Con coppia singola da lunedì a giovedì dedurre sempre 30 minuti se esiste lavoro registrato. Con multi-timbrature usare la pausa reale e dedurre solo l'eventuale differenza per arrivare a 30 minuti minimi. Il venerdì la pausa di 30 minuti scatta solo se le ore lorde superano 6h (D.Lgs 66/2003 Art. 8).
+- **Regola**: Le multi-timbrature contano come pausa reale; non dedurre altri 30 minuti se il break totale è già almeno di 30 minuti. Il venerdì la pausa obbligatoria di 30 minuti si applica solo quando le ore lorde superano 6h; sotto le 6h nessuna pausa. `isFriday(parseDateISO(dateKey))` continua a distinguere target giornaliero e regola pausa del venerdì.
 
 ### Problema: Date UTC vs Local
 - **Causa**: `new Date('2026-02-24')` crea una data UTC (mezzanotte UTC, che in IT è 23:00 del giorno prima in inverno).

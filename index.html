@@ -14,6 +14,23 @@
     <link rel="icon" type="image/svg+xml" sizes="192x192" href="icons/icon-192.svg">
     <link rel="apple-touch-icon" href="icons/icon-192.svg">
     <link rel="stylesheet" href="css/style.css">
+    <!-- Modulepreload: carica tutti i moduli JS in parallelo per eliminare
+         il waterfall sequenziale degli import. Cruciale per avvio rapido offline. -->
+    <link rel="modulepreload" href="js/app.js">
+    <link rel="modulepreload" href="js/controllers/AppController.js">
+    <link rel="modulepreload" href="js/models/TimeEntry.js">
+    <link rel="modulepreload" href="js/models/WeekData.js">
+    <link rel="modulepreload" href="js/services/TimeCalculator.js">
+    <link rel="modulepreload" href="js/services/WeekNavigator.js">
+    <link rel="modulepreload" href="js/services/ExportService.js">
+    <link rel="modulepreload" href="js/storage/StorageManager.js">
+    <link rel="modulepreload" href="js/storage/LocalStorageAdapter.js">
+    <link rel="modulepreload" href="js/storage/IndexedDBAdapter.js">
+    <link rel="modulepreload" href="js/views/UIManager.js">
+    <link rel="modulepreload" href="js/views/ModalManager.js">
+    <link rel="modulepreload" href="js/utils/EventBus.js">
+    <link rel="modulepreload" href="js/utils/DateUtils.js">
+    <link rel="modulepreload" href="js/utils/Validators.js">
 </head>
 <body>
     <!-- Install Banner PWA (per nuovi visitatori) -->
@@ -176,7 +193,7 @@
             <a href="#" id="showInstallHelp" class="install-help-link">
                 📲 Installa l'app sul tuo dispositivo
             </a>
-            <span class="app-version" id="appVersion">v2.3.13 • Dati salvati solo sul tuo dispositivo 🔒</span>
+            <span class="app-version" id="appVersion">v2.4.0 • Dati salvati solo sul tuo dispositivo 🔒</span>
         </footer>
     </div>
 

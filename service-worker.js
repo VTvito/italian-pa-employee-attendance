@@ -17,15 +17,15 @@
  */
 
 // IMPORTANTE: Incrementa questo numero per forzare l'aggiornamento dell'app
-const CACHE_NAME = 'timbra-pa-v32';
+const CACHE_NAME = 'timbra-pa-v33';
 
 // Versione leggibile per logging
-const APP_VERSION = '2.3.13';
+const APP_VERSION = '2.4.0';
 
 // Timeout brevi per evitare che su iPhone una rete assente o instabile
 // faccia sembrare l'app non disponibile offline.
-const NAVIGATION_NETWORK_TIMEOUT_MS = 1800;
-const APP_SHELL_NETWORK_TIMEOUT_MS = 2200;
+const NAVIGATION_NETWORK_TIMEOUT_MS = 1200;
+const APP_SHELL_NETWORK_TIMEOUT_MS = 1500;
 
 // Determina il base path per GitHub Pages o localhost
 const BASE_PATH = self.location.pathname.replace('service-worker.js', '');
@@ -281,10 +281,21 @@ async function fetchWithTimeout(request, timeoutMs) {
 
 /**
  * Strategia network-first per HTML/JS/CSS/manifest.
+ * Quando il browser segnala assenza di rete, servi direttamente dalla cache
+ * evitando l'attesa di timeout (cruciale con ~15 moduli ES da caricare).
  * @param {Request} request
  * @returns {Promise<Response>}
  */
 async function fetchNetworkFirst(request) {
+    // Fast path offline: evita timeout network per ogni risorsa
+    if (!self.navigator.onLine) {
+        const cachedOffline = await caches.match(request);
+        if (cachedOffline) {
+            return cachedOffline;
+        }
+        // Nessuna cache disponibile: tenta comunque la rete come ultima risorsa
+    }
+
     try {
         const timeoutMs = request.mode === 'navigate'
             ? NAVIGATION_NETWORK_TIMEOUT_MS

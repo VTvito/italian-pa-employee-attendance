@@ -404,15 +404,15 @@ const TimeCalculatorTests = {
             TestRunner.assert.equal(result.breakMinutes, 10);
         });
 
-        await TestRunner.test('calculateDayHours - venerdì applica pausa 30min oltre 6h lorde', () => {
+        await TestRunner.test('calculateDayHours - venerdì applica pausa graduale oltre 6h lorde', () => {
             const entries = [
                 { type: 'entrata', time: '08:00' },
                 { type: 'uscita', time: '14:15' }
             ];
             const result = timeCalculator.calculateDayHours(entries, '2026-02-06'); // Venerdì
-            // 6h15m lorde -> pausa 30min (supera 6h) -> 5h45m nette = 345min
-            TestRunner.assert.equal(result.minutes, 345);
-            TestRunner.assert.equal(result.breakMinutes, 30);
+            // 6h15m lorde -> eccedenza 15min -> pausa 15min -> 6h nette = 360min
+            TestRunner.assert.equal(result.minutes, 360);
+            TestRunner.assert.equal(result.breakMinutes, 15);
         });
 
         await TestRunner.test('calculateDayHours - multi-coppia venerdì integra pausa reale mancante oltre 6h', () => {
@@ -438,14 +438,14 @@ const TimeCalculatorTests = {
             TestRunner.assert.equal(result.minutes, 360);
         });
 
-        await TestRunner.test('calculateDayHours - venerdì 6h10m lorde zona penalità', () => {
+        await TestRunner.test('calculateDayHours - venerdì 6h10m lorde pausa graduale', () => {
             const entries = [
                 { type: 'entrata', time: '08:00' },
                 { type: 'uscita', time: '14:10' }
             ];
             const result = timeCalculator.calculateDayHours(entries, '2026-02-06'); // Venerdì
-            // 6h10m lorde (370min) -> supera 6h -> pausa 30min -> 5h40m nette = 340min
-            TestRunner.assert.equal(result.minutes, 340);
+            // 6h10m lorde (370min) -> eccedenza 10min -> pausa 10min -> 6h nette = 360min
+            TestRunner.assert.equal(result.minutes, 360);
         });
 
         await TestRunner.test('calculateDayHours - smart working', () => {
@@ -493,7 +493,7 @@ const TimeCalculatorTests = {
             TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(300, '2026-02-02', 1, 0), 30);
             TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(315, '2026-02-02', 2, 60), 0);
             TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(360, '2026-02-06', 1, 0), 0);
-            TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(375, '2026-02-06', 1, 0), 30);
+            TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(375, '2026-02-06', 1, 0), 15);
         });
 
         await TestRunner.test('calculateWeekTotal - settimana reale allineata al caso aziendale', () => {

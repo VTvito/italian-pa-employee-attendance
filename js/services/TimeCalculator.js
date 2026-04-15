@@ -165,7 +165,9 @@ export class TimeCalculator {
      * D.Lgs 66/2003 Art. 8: se l'orario giornaliero supera 6h,
      * è obbligatorio un intervallo di pausa (30 min per Poste Italiane).
      * Lun–Gio: pausa fissa 30 min indipendentemente dalle ore lorde.
-     * Venerdì: pausa 30 min SOLO se le ore lorde superano 6h (360 min).
+     * Venerdì: la pausa erode solo l'eccedenza oltre le 6h, fino a max 30 min.
+     * Esempio: 6h07m lordo → pausa 7min → netto 6h.
+     *          6h31m lordo → pausa 30min → netto 6h01m.
      * 
      * @param {number} workedMinutes - Minuti lavorati lordi
      * @param {string} dateKey - Data in formato ISO
@@ -177,10 +179,12 @@ export class TimeCalculator {
         }
 
         if (isFriday(parseDateISO(dateKey))) {
-            // Venerdì: pausa obbligatoria solo oltre le 6h lorde
-            return workedMinutes > CONFIG.FRIDAY_TARGET_HOURS * 60
-                ? CONFIG.PAUSE_MINUTES
-                : 0;
+            const fridayThreshold = CONFIG.FRIDAY_TARGET_HOURS * 60; // 360
+            if (workedMinutes <= fridayThreshold) {
+                return 0;
+            }
+            // La pausa erode solo l'eccedenza oltre le 6h, fino a 30min max
+            return Math.min(CONFIG.PAUSE_MINUTES, workedMinutes - fridayThreshold);
         }
 
         return CONFIG.PAUSE_MINUTES;

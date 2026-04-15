@@ -1,5 +1,6 @@
 ---
 applyTo: "js/**/*.js"
+description: "Use when writing or modifying JavaScript files. Covers ES Module patterns, singleton services, date/time handling, calculation logic, and validation rules."
 ---
 
 # Istruzioni JavaScript — Timbra PA
@@ -44,8 +45,8 @@ Lo storage passa SEMPRE da `StorageManager`. Mai chiamare `localStorage` o `inde
 2. Entry normali: calcola coppie entrata/uscita, somma i minuti
 3. Pausa automatica:
    - Lun–Gio: con coppia singola deduce 30min; con multi-timbrature usa la pausa reale e integra solo la quota mancante fino a 30min
-   - Venerdì: pausa di 30min SOLO se le ore lorde superano 6h (D.Lgs 66/2003 Art. 8); sotto le 6h nessuna pausa automatica; con multi-timbrature vale la pausa reale e si integra l'eventuale differenza fino a 30min
-   - Le multi-timbrature evitano deduzioni doppie quando la pausa reale è già sufficiente
+   - Venerdì: pausa graduale oltre 6h lorde — erode solo l'eccedenza oltre le 6h, fino a max 30min (D.Lgs 66/2003 Art. 8). Il netto non scende mai sotto 6h. Sotto le 6h nessuna pausa.
+   - Con multi-timbrature la pausa reale conta; si integra l'eventuale differenza fino al minimo richiesto
 4. `isFriday()` determina sia il target giornaliero sia la regola pausa del venerdì
 
 ## Validazione Pre-Commit

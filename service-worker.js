@@ -17,7 +17,7 @@
  */
 
 // IMPORTANTE: Incrementa questo numero per forzare l'aggiornamento dell'app
-const CACHE_NAME = 'timbra-pa-v33';
+const CACHE_NAME = 'timbra-pa-v34';
 
 // Versione leggibile per logging
 const APP_VERSION = '2.4.0';

@@ -1,5 +1,6 @@
 ---
 applyTo: "**"
+description: "Critical lessons learned during development. Consult to avoid repeating past bugs: SW skipWaiting, cache versioning, pause calculations, date UTC pitfalls, iOS caching, Git identity issues."
 ---
 
 # Lezioni Apprese — Sviluppo Timbra PA
@@ -50,8 +51,8 @@ Questo documento raccoglie le lezioni apprese durante lo sviluppo agentico dell'
 
 ### Problema: Regola pausa pranzo aziendale diversa da quella inizialmente modellata
 - **Causa**: La logica era stata semplificata troppo, deducendo 30 minuti anche quando la pausa reale era già stata registrata con multi-timbrature.
-- **Soluzione**: Con coppia singola da lunedì a giovedì dedurre sempre 30 minuti se esiste lavoro registrato. Con multi-timbrature usare la pausa reale e dedurre solo l'eventuale differenza per arrivare a 30 minuti minimi. Il venerdì la pausa di 30 minuti scatta solo se le ore lorde superano 6h (D.Lgs 66/2003 Art. 8).
-- **Regola**: Le multi-timbrature contano come pausa reale; non dedurre altri 30 minuti se il break totale è già almeno di 30 minuti. Il venerdì la pausa obbligatoria di 30 minuti si applica solo quando le ore lorde superano 6h; sotto le 6h nessuna pausa. `isFriday(parseDateISO(dateKey))` continua a distinguere target giornaliero e regola pausa del venerdì.
+- **Soluzione**: Con coppia singola da lunedì a giovedì dedurre sempre 30 minuti se esiste lavoro registrato. Con multi-timbrature usare la pausa reale e dedurre solo l'eventuale differenza per arrivare a 30 minuti minimi. Il venerdì la pausa erode solo l'eccedenza oltre le 6h, fino a max 30 minuti (D.Lgs 66/2003 Art. 8): ad esempio 6h07m lordo → pausa 7min → netto 6h.
+- **Regola**: Le multi-timbrature contano come pausa reale; non dedurre altri 30 minuti se il break totale è già almeno di 30 minuti. Il venerdì la pausa erode solo l'eccedenza oltre le 6h (fino a 30min max): il netto non scende mai sotto le 6h. Sotto le 6h nessuna pausa. `isFriday(parseDateISO(dateKey))` continua a distinguere target giornaliero e regola pausa del venerdì.
 
 ### Problema: Date UTC vs Local
 - **Causa**: `new Date('2026-02-24')` crea una data UTC (mezzanotte UTC, che in IT è 23:00 del giorno prima in inverno).

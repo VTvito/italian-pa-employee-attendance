@@ -1,5 +1,6 @@
 ---
 applyTo: "css/**/*.css"
+description: "Use when writing or modifying CSS. Covers iOS-inspired design, CSS custom properties, responsive patterns, and no-inline-styles rule."
 ---
 
 # Istruzioni CSS — Timbra PA

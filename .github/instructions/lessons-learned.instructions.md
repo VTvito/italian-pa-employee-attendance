@@ -1,4 +1,5 @@
 ---
+name: 'Lessons Learned'
 applyTo: "**"
 description: "Critical lessons learned during development. Consult to avoid repeating past bugs: SW skipWaiting, cache versioning, pause calculations, date UTC pitfalls, iOS caching, Git identity issues."
 ---

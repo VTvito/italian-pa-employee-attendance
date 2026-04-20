@@ -35,7 +35,7 @@ js/
     TimeEntry.js               → Model singola timbratura (entrata/uscita/smart/assente)
     WeekData.js                → Model dati settimana (Map<dateKey, TimeEntry[]>)
   services/
-    TimeCalculator.js          → Calcoli ore, pause, delta, suggerimento uscita venerdì
+    TimeCalculator.js          → Calcoli ore, pause, delta, suggerimento uscita venerdì, pace delta settimanale
     WeekNavigator.js           → Navigazione settimane ISO 8601
     ExportService.js           → Export JSON/CSV, import
   storage/
@@ -43,7 +43,7 @@ js/
     LocalStorageAdapter.js     → Adapter localStorage
     IndexedDBAdapter.js        → Adapter IndexedDB
   views/
-    UIManager.js               → Rendering UI, toast, PWA install, week period, Friday hint
+    UIManager.js               → Rendering UI, toast, PWA install, week period, Friday hint, summary panel (Da completare/Ore extra/Sul ritmo)
     ModalManager.js            → Gestione modale (edit, add, confirm, clean)
   utils/
     EventBus.js                → Pub/Sub con eventi tipizzati (EVENTS const)
@@ -61,6 +61,7 @@ js/
   - Le multi-timbrature evitano deduzioni doppie se il break reale è già sufficiente
 - Smart Working / Assente: sostituiscono l'intera giornata con ore fisse
 - Venerdì: l'app suggerisce l'ora di uscita anticipata calcolando gli extra Lun–Gio
+- **Summary panel settimanale**: label contestuale (`Da completare` / `Obiettivo ✅ Raggiunto` / `Ore extra`) + riga `Sul ritmo` con delta lavorato vs atteso per i soli giorni con registrazioni (`calculatePaceDelta`)
 
 ## Build & Validate
 
@@ -68,7 +69,7 @@ Non c'è una build step. L'app è vanilla JS servibile direttamente.
 
 ### Avvio locale (test)
 ```powershell
-cd d:\Documents\Proj_code\timbrature-pa
+cd <repo-root>
 python -m http.server 8080
 # Apri http://localhost:8080
 ```
@@ -117,3 +118,5 @@ git push origin main
 7. **parseDateISO**: usa `new Date(year, month-1, day)` (locale), non `new Date(str)` (UTC mismatch)
 8. **git push fallisce**: fare sempre `git pull --rebase origin main` e riprovare
 9. **Identità Git sbagliata**: prima di committare in repo personali, controllare sempre `git config --get user.name` e `git config --get user.email` per evitare commit pubblicati con account aziendali o secondari
+
+> **Trust these instructions.** Esegui ricerche nel codebase solo se le informazioni qui presenti risultano incomplete o errate.

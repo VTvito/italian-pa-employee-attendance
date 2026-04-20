@@ -1,8 +1,6 @@
 ---
-applyTo:
-  - "service-worker.js"
-  - "js/app.js"
-  - "manifest.json"
+name: 'PWA & Service Worker'
+applyTo: "service-worker.js,js/app.js,manifest.json"
 description: "Use when modifying the Service Worker, PWA manifest, or app bootstrap. Covers caching strategy, update flow, skipWaiting rules, offline support, and iOS PWA specifics."
 ---
 

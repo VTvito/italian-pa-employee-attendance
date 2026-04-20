@@ -1,4 +1,5 @@
 ---
+name: 'CSS Style Guide'
 applyTo: "css/**/*.css"
 description: "Use when writing or modifying CSS. Covers iOS-inspired design, CSS custom properties, responsive patterns, and no-inline-styles rule."
 ---
@@ -36,3 +37,4 @@ description: "Use when writing or modifying CSS. Covers iOS-inspired design, CSS
 - Classi BEM-like: `.day-card`, `.day-header`, `.day-entries`
 - Modifier con prefisso: `.is-today`, `.is-open`, `.delta-positive`, `.type-entrata`
 - State classes: `.is-visible`, `.has-install-banner`
+- Balance/pace classes: `.balance-positive`, `.balance-negative`, `.balance-neutral`, `.pace-positive`, `.pace-negative`, `.pace-neutral`

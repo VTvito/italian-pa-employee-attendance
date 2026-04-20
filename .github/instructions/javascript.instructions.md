@@ -1,4 +1,5 @@
 ---
+name: 'JavaScript Standards'
 applyTo: "js/**/*.js"
 description: "Use when writing or modifying JavaScript files. Covers ES Module patterns, singleton services, date/time handling, calculation logic, and validation rules."
 ---

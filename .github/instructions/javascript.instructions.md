@@ -45,8 +45,8 @@ Lo storage passa SEMPRE da `StorageManager`. Mai chiamare `localStorage` o `inde
 2. Entry normali: calcola coppie entrata/uscita, somma i minuti
 3. Pausa automatica:
    - Lun–Gio: con coppia singola deduce 30min; con multi-timbrature usa la pausa reale e integra solo la quota mancante fino a 30min
-   - Venerdì: pausa graduale oltre 6h lorde — erode solo l'eccedenza oltre le 6h, fino a max 30min (D.Lgs 66/2003 Art. 8). Il netto non scende mai sotto 6h. Sotto le 6h nessuna pausa.
-   - Con multi-timbrature la pausa reale conta; si integra l'eventuale differenza fino al minimo richiesto
+   - Venerdì: nessuna pausa automatica. Con multi-timbrature conta solo la pausa reale registrata con uscita+rientro
+   - Le multi-timbrature evitano deduzioni doppie quando la pausa reale è già sufficiente
 4. `isFriday()` determina sia il target giornaliero sia la regola pausa del venerdì
 
 ## Validazione Pre-Commit

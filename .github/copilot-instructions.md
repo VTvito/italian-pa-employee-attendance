@@ -57,7 +57,7 @@ js/
 - Target giornaliero Lun–Gio: **7h 30m** — Venerdì: **6h**
 - Pausa pranzo automatica:
   - Lun–Gio: **30 minuti fissi** con coppia singola; con multi-timbrature vale la pausa reale e si integra solo l'eventuale differenza fino a 30 minuti
-  - Venerdì: pausa graduale oltre 6h lorde — erode solo l'eccedenza oltre le 6h, fino a max 30 min (D.Lgs 66/2003 Art. 8). Esempio: 6h07m lordo → pausa 7min → netto 6h. A 6h31m lordo → pausa piena 30min → netto 6h01m. Sotto le 6h nessuna pausa; con multi-timbrature vale la pausa reale e si integra l'eventuale differenza
+  - Venerdì: nessuna pausa automatica; con multi-timbrature conta solo la pausa reale registrata con uscita+rientro
   - Le multi-timbrature evitano deduzioni doppie se il break reale è già sufficiente
 - Smart Working / Assente: sostituiscono l'intera giornata con ore fisse
 - Venerdì: l'app suggerisce l'ora di uscita anticipata calcolando gli extra Lun–Gio
@@ -112,7 +112,7 @@ git push origin main
 2. **skipWaiting**: NON va nel handler `install` — solo nel handler `message` su richiesta utente
 3. **iOS PWA**: l'icona e il nome vengono cachati all'installazione. Per aggiornarli l'utente deve rimuovere e reinstallare l'app
 4. **localStorage quota**: ~5MB. Comprimere dati se si cresce. Attualmente ~2KB per mese
-5. **Calcoli pause**: con coppia singola Lun–Gio la pausa è sempre 30min; con multi-timbrature deduci solo l'eventuale quota mancante ai 30min. Venerdì la pausa erode solo l'eccedenza oltre le 6h fino a 30min max (il netto non scende mai sotto 6h)
+5. **Calcoli pause**: con coppia singola Lun–Gio la pausa è sempre 30min; con multi-timbrature deduci solo l'eventuale quota mancante ai 30min. Venerdì nessuna pausa automatica: conta solo l'eventuale pausa reale registrata
 6. **Update PWA**: HTML, JS, CSS e manifest devono preferire la rete per evitare mix tra codice nuovo e vecchio; il SW non deve mai toccare localStorage o IndexedDB
 7. **parseDateISO**: usa `new Date(year, month-1, day)` (locale), non `new Date(str)` (UTC mismatch)
 8. **git push fallisce**: fare sempre `git pull --rebase origin main` e riprovare

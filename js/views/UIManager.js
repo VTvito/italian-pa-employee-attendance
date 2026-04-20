@@ -41,6 +41,9 @@ export class UIManager {
             weekDays: document.getElementById('weekDays'),
             totalHours: document.getElementById('totalHours'),
             balanceHours: document.getElementById('balanceHours'),
+            balanceLabel: document.getElementById('balanceLabel'),
+            paceHours: document.getElementById('paceHours'),
+            paceRow: document.getElementById('paceRow'),
             toast: document.getElementById('toast'),
             
             // Buttons
@@ -649,19 +652,48 @@ export class UIManager {
     updateTotals(weekData) {
         const weekTotal = timeCalculator.calculateWeekTotal(weekData);
         const balance = timeCalculator.calculateBalance(weekTotal.minutes);
+        const pace = timeCalculator.calculatePaceDelta(weekData);
 
         this.elements.totalHours.textContent = weekTotal.formatted;
-        this.elements.balanceHours.textContent = balance.formatted;
 
-        // Aggiorna classe per colore
-        this.elements.balanceHours.classList.remove('balance-positive', 'balance-negative', 'balance-neutral');
-        
+        // --- Riga "Da completare / Ore extra / Obiettivo raggiunto" ---
+        const balanceEl = this.elements.balanceHours;
+        const labelEl = this.elements.balanceLabel;
+        balanceEl.classList.remove('balance-positive', 'balance-negative', 'balance-neutral');
+
         if (balance.isPositive) {
-            this.elements.balanceHours.classList.add('balance-positive');
-        } else if (balance.isNegative) {
-            this.elements.balanceHours.classList.add('balance-negative');
+            labelEl.textContent = 'Ore extra:';
+            balanceEl.textContent = balance.formatted; // es. "+02:30"
+            balanceEl.classList.add('balance-positive');
+        } else if (balance.isNeutral) {
+            labelEl.textContent = 'Obiettivo:';
+            balanceEl.textContent = '✅ Raggiunto';
+            balanceEl.classList.add('balance-neutral');
         } else {
-            this.elements.balanceHours.classList.add('balance-neutral');
+            // Settimana in corso: mostra quanto manca (senza il segno -)
+            const remaining = timeCalculator.calculateRemaining(weekTotal.minutes);
+            labelEl.textContent = 'Da completare:';
+            balanceEl.textContent = remaining.formatted;
+            balanceEl.classList.add('balance-neutral');
+        }
+
+        // --- Riga "Sul ritmo" ---
+        const paceEl = this.elements.paceHours;
+        const paceRow = this.elements.paceRow;
+        paceEl.classList.remove('pace-positive', 'pace-negative', 'pace-neutral');
+
+        if (!pace.hasData) {
+            paceRow.style.display = 'none';
+        } else {
+            paceRow.style.display = '';
+            paceEl.textContent = pace.formatted; // es. "+00:30" o "-00:15"
+            if (pace.isPositive) {
+                paceEl.classList.add('pace-positive');
+            } else if (pace.isNegative) {
+                paceEl.classList.add('pace-negative');
+            } else {
+                paceEl.classList.add('pace-neutral');
+            }
         }
     }
 

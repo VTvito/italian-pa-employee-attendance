@@ -160,14 +160,10 @@ export class TimeCalculator {
     }
 
     /**
-     * Restituisce la pausa minima richiesta per il giorno
-     * 
-     * D.Lgs 66/2003 Art. 8: se l'orario giornaliero supera 6h,
-     * è obbligatorio un intervallo di pausa (30 min per Poste Italiane).
-     * Lun–Gio: pausa fissa 30 min indipendentemente dalle ore lorde.
-     * Venerdì: la pausa erode solo l'eccedenza oltre le 6h, fino a max 30 min.
-     * Esempio: 6h07m lordo → pausa 7min → netto 6h.
-     *          6h31m lordo → pausa 30min → netto 6h01m.
+     * Restituisce la pausa minima richiesta per il giorno.
+     * Lun–Gio: pausa fissa di 30 minuti.
+     * Venerdì: nessuna pausa automatica; conta solo l'eventuale pausa reale
+     * registrata con uscita+rientro.
      * 
      * @param {number} workedMinutes - Minuti lavorati lordi
      * @param {string} dateKey - Data in formato ISO
@@ -179,12 +175,7 @@ export class TimeCalculator {
         }
 
         if (isFriday(parseDateISO(dateKey))) {
-            const fridayThreshold = CONFIG.FRIDAY_TARGET_HOURS * 60; // 360
-            if (workedMinutes <= fridayThreshold) {
-                return 0;
-            }
-            // La pausa erode solo l'eccedenza oltre le 6h, fino a 30min max
-            return Math.min(CONFIG.PAUSE_MINUTES, workedMinutes - fridayThreshold);
+            return 0;
         }
 
         return CONFIG.PAUSE_MINUTES;
@@ -461,6 +452,58 @@ export class TimeCalculator {
             openEntryMinutes,
             unpairedExitMinutes,
             lastPairedExitMinutes
+        };
+    }
+
+    /**
+     * Calcola il delta di ritmo settimanale: confronta le ore lavorate
+     * con le ore attese per i soli giorni che hanno almeno una entry.
+     * I giorni senza registrazioni non contribuiscono al confronto.
+     *
+     * @param {Object} weekEntries - Oggetto {dateKey: [entries]}
+     * @returns {{
+     *   deltaMinutes: number,
+     *   formatted: string,
+     *   expectedMinutes: number,
+     *   workedMinutes: number,
+     *   isPositive: boolean,
+     *   isNegative: boolean,
+     *   isNeutral: boolean,
+     *   hasData: boolean
+     * }}
+     */
+    calculatePaceDelta(weekEntries) {
+        let workedMinutes = 0;
+        let expectedMinutes = 0;
+        let hasData = false;
+
+        for (const [dateKey, entries] of Object.entries(weekEntries)) {
+            if (!entries || entries.length === 0) continue;
+
+            hasData = true;
+            const dayResult = this.calculateDayHours(entries, dateKey);
+            const targetMinutes = this.hoursToMinutes(this.getDailyTarget(dateKey));
+
+            // I giorni "assente" contano 0 ore lavorate ma 0 ore attese (non penalizzano)
+            if (entries.length === 1 && entries[0].type === 'assente') {
+                continue;
+            }
+
+            workedMinutes += dayResult.minutes;
+            expectedMinutes += targetMinutes;
+        }
+
+        const deltaMinutes = workedMinutes - expectedMinutes;
+
+        return {
+            deltaMinutes,
+            formatted: this.formatDeltaMinutes(deltaMinutes),
+            expectedMinutes,
+            workedMinutes,
+            isPositive: deltaMinutes > 0,
+            isNegative: deltaMinutes < 0,
+            isNeutral: deltaMinutes === 0,
+            hasData
         };
     }
 

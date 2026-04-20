@@ -736,6 +736,28 @@ body {
     color: var(--color-text-light);
 }
 
+/* Riga "Sul ritmo" */
+.summary-pace .summary-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.summary-pace .summary-value {
+    font-size: var(--font-size-base);
+}
+
+.pace-positive {
+    color: var(--color-success);
+}
+
+.pace-negative {
+    color: var(--color-warning);
+}
+
+.pace-neutral {
+    color: var(--color-text-secondary);
+}
+
 /* ============================================
    Export Buttons Section
    ============================================ */

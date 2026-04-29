@@ -417,7 +417,7 @@ export class UIManager {
         this.renderWorkdayExitHint(weekInfo, weekData);
 
         // Calcola e mostra totali
-        this.updateTotals(weekData);
+        this.updateTotals(weekInfo, weekData);
     }
 
     /**
@@ -649,13 +649,17 @@ export class UIManager {
 
     /**
      * Aggiorna i totali della settimana
+     * @param {Object} weekInfo - Info settimana
      * @param {Object} weekData - Dati settimana
      */
-    updateTotals(weekData) {
+    updateTotals(weekInfo, weekData) {
         const liveSummaryOptions = { includeOpenSessions: true };
         const weekTotal = timeCalculator.calculateWeekTotal(weekData, liveSummaryOptions);
         const balance = timeCalculator.calculateBalance(weekTotal.minutes);
-        const pace = timeCalculator.calculatePaceDelta(weekData, liveSummaryOptions);
+        const paceOptions = weekInfo.isCurrent
+            ? { cutoffDateKey: formatDateISO(new Date()) }
+            : {};
+        const pace = timeCalculator.calculatePaceDelta(weekData, paceOptions);
 
         this.elements.totalHours.textContent = weekTotal.formatted;
 

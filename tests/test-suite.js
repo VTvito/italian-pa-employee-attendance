@@ -544,28 +544,32 @@ const TimeCalculatorTests = {
             TestRunner.assert.equal(liveResult.formatted, '07:52');
         });
 
-        await TestRunner.test('calculatePaceDelta - il ritmo mantiene anche i minuti in corso di oggi', () => {
+        await TestRunner.test('calculatePaceDelta - il ritmo accumula solo i delta dei giorni chiusi fino a oggi', () => {
             const weekEntries = {
                 '2026-02-02': [
                     { type: 'entrata', time: '08:00' },
                     { type: 'uscita', time: '16:11' }
                 ],
+                '2026-02-03': [
+                    { type: 'entrata', time: '08:00' },
+                    { type: 'uscita', time: '16:20' }
+                ],
                 '2026-02-06': [
                     { type: 'entrata', time: '08:00' }
+                ],
+                '2026-02-07': [
+                    { type: 'smart', hours: 7.5 }
                 ]
             };
 
-            const defaultPace = timeCalculator.calculatePaceDelta(weekEntries);
-            const livePace = timeCalculator.calculatePaceDelta(weekEntries, {
-                includeOpenSessions: true,
-                currentTime: '08:11',
-                todayDateKey: '2026-02-06'
+            const pace = timeCalculator.calculatePaceDelta(weekEntries, {
+                cutoffDateKey: '2026-02-06'
             });
 
-            TestRunner.assert.equal(defaultPace.deltaMinutes, -349);
-            TestRunner.assert.equal(defaultPace.formatted, '-5h 49m');
-            TestRunner.assert.equal(livePace.deltaMinutes, -338);
-            TestRunner.assert.equal(livePace.formatted, '-5h 38m');
+            TestRunner.assert.equal(pace.deltaMinutes, 31);
+            TestRunner.assert.equal(pace.formatted, '+31min');
+            TestRunner.assert.equal(pace.expectedMinutes, 900);
+            TestRunner.assert.equal(pace.workedMinutes, 931);
         });
 
         await TestRunner.test('calculateFridayExitSuggestion - usa l ultimo giorno utile in sede', () => {

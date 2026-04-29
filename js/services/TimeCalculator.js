@@ -523,12 +523,12 @@ export class TimeCalculator {
     }
 
     /**
-     * Calcola il delta di ritmo settimanale: confronta le ore lavorate
-     * con le ore attese per i soli giorni che hanno almeno una entry.
-     * I giorni senza registrazioni non contribuiscono al confronto.
+        * Calcola il delta di ritmo settimanale come saldo cumulato dei giorni
+        * chiusi fino al cutoff selezionato.
+        * I giorni aperti o futuri non entrano nel conteggio.
      *
      * @param {Object} weekEntries - Oggetto {dateKey: [entries]}
-    * @param {{includeOpenSessions?: boolean, currentTime?: string|number|null, todayDateKey?: string}} [options={}]
+        * @param {{cutoffDateKey?: string|null}} [options={}]
      * @returns {{
      *   deltaMinutes: number,
      *   formatted: string,
@@ -541,27 +541,34 @@ export class TimeCalculator {
      * }}
      */
     calculatePaceDelta(weekEntries, options = {}) {
+        let deltaMinutes = 0;
         let workedMinutes = 0;
         let expectedMinutes = 0;
         let hasData = false;
+        const cutoffDateKey = options.cutoffDateKey || null;
+        const sortedDateKeys = Object.keys(weekEntries).sort();
 
-        for (const [dateKey, entries] of Object.entries(weekEntries)) {
+        for (const dateKey of sortedDateKeys) {
+            if (cutoffDateKey && dateKey > cutoffDateKey) {
+                break;
+            }
+
+            const entries = weekEntries[dateKey];
             if (!entries || entries.length === 0) continue;
 
-            hasData = true;
-            const dayResult = this.calculateDaySummaryHours(entries, dateKey, options);
-            const targetMinutes = this.hoursToMinutes(this.getDailyTarget(dateKey));
-
-            // I giorni "assente" contano 0 ore lavorate ma 0 ore attese (non penalizzano)
-            if (entries.length === 1 && entries[0].type === 'assente') {
+            const dayDelta = this.calculateDayDelta(entries, dateKey);
+            if (!dayDelta || dayDelta.hasIncomplete) {
                 continue;
             }
 
+            const dayResult = this.calculateDayHours(entries, dateKey);
+            const targetMinutes = this.hoursToMinutes(this.getDailyTarget(dateKey));
+
+            deltaMinutes += dayDelta.minutes;
             workedMinutes += dayResult.minutes;
             expectedMinutes += targetMinutes;
+            hasData = true;
         }
-
-        const deltaMinutes = workedMinutes - expectedMinutes;
 
         return {
             deltaMinutes,

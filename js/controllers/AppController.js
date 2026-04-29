@@ -35,6 +35,9 @@ export class AppController {
         
         /** @type {UIManager} */
         this.ui = null;
+
+        /** @type {number|null} */
+        this.liveRefreshTimerId = null;
         
         /** @type {boolean} */
         this.isInitialized = false;
@@ -98,6 +101,11 @@ export class AppController {
      */
     setupVisibilityListener() {
         document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'hidden') {
+                this.clearLiveRefreshTimer();
+                return;
+            }
+
             if (document.visibilityState === 'visible' && this.isInitialized) {
                 // Aggiorna la settimana corrente
                 const weekChanged = this.navigator.refreshCurrentWeek();
@@ -107,7 +115,11 @@ export class AppController {
                     console.log('AppController: Nuova settimana rilevata, aggiornamento vista...');
                     await this.loadCurrentWeek();
                     this.ui.showToast('📅 Nuova settimana iniziata!', 'info');
+                } else if (this.shouldRefreshLiveWeek()) {
+                    this.refreshCurrentWeekView();
                 }
+
+                this.syncLiveRefreshTimer();
             }
         });
     }
@@ -143,6 +155,7 @@ export class AppController {
         
         // Aggiorna UI
         this.ui.renderWeek(weekInfo, this.currentWeekData.toJSON());
+        this.syncLiveRefreshTimer();
         
         eventBus.emit(EVENTS.WEEK_DATA_LOADED, { weekKey, weekInfo });
     }
@@ -169,6 +182,63 @@ export class AppController {
         // Aggiorna UI
         const weekInfo = this.navigator.getViewWeekInfo();
         this.ui.renderWeek(weekInfo, data);
+        this.syncLiveRefreshTimer();
+    }
+
+    /**
+     * Aggiorna la settimana corrente usando i dati gia caricati.
+     */
+    refreshCurrentWeekView() {
+        if (!this.currentWeekData || !this.ui) {
+            return;
+        }
+
+        const weekInfo = this.navigator.getViewWeekInfo();
+        this.ui.renderWeek(weekInfo, this.currentWeekData.toJSON());
+    }
+
+    /**
+     * Verifica se la vista corrente deve aggiornarsi al cambio minuto.
+     * @returns {boolean}
+     */
+    shouldRefreshLiveWeek() {
+        if (!this.currentWeekData || !this.navigator.isViewingCurrentWeek()) {
+            return false;
+        }
+
+        return this.currentWeekData.expectsUscita(this.getTodayDateKey());
+    }
+
+    /**
+     * Ferma un refresh live pendente.
+     */
+    clearLiveRefreshTimer() {
+        if (this.liveRefreshTimerId !== null) {
+            clearTimeout(this.liveRefreshTimerId);
+            this.liveRefreshTimerId = null;
+        }
+    }
+
+    /**
+     * Pianifica il prossimo refresh live al cambio minuto.
+     */
+    syncLiveRefreshTimer() {
+        this.clearLiveRefreshTimer();
+
+        if (!this.shouldRefreshLiveWeek()) {
+            return;
+        }
+
+        const now = new Date();
+        const millisecondsUntilNextMinute = Math.max(
+            1000,
+            60000 - ((now.getSeconds() * 1000) + now.getMilliseconds())
+        );
+
+        this.liveRefreshTimerId = setTimeout(() => {
+            this.refreshCurrentWeekView();
+            this.syncLiveRefreshTimer();
+        }, millisecondsUntilNextMinute);
     }
 
     /**

@@ -451,7 +451,9 @@ export class UIManager {
         }
 
         // Calcola ore del giorno
-        const dayHours = timeCalculator.calculateDayHours(entries, day.dateKey);
+        const dayHours = timeCalculator.calculateDaySummaryHours(entries, day.dateKey, {
+            includeOpenSessions: true
+        });
 
         // Calcola delta giornaliero (minuti extra/deficit)
         const delta = timeCalculator.calculateDayDelta(entries, day.dateKey);
@@ -856,7 +858,8 @@ export class UIManager {
         // Calcola suggerimento
         const suggestion = timeCalculator.calculateFridayExitSuggestion(
             weekData,
-            (weekInfo.days || []).map((day) => day.dateKey)
+            (weekInfo.days || []).map((day) => day.dateKey),
+            { includeOpenSessions: true }
         );
         if (!suggestion) return;
 
@@ -876,8 +879,9 @@ export class UIManager {
         const targetDayLabel = targetDay
             ? `${this.getDayName(targetDay.dayOfWeek)} ${this.formatDate(targetDay.date)}`
             : suggestion.targetDateKey;
-        const targetHours = Math.floor(suggestion.targetDayMinutes / 60);
-        const targetMinutes = suggestion.targetDayMinutes % 60;
+        const minutesToCover = suggestion.remainingDayMinutes ?? suggestion.targetDayMinutes;
+        const targetHours = Math.floor(minutesToCover / 60);
+        const targetMinutes = minutesToCover % 60;
         const targetFormatted = targetMinutes > 0
             ? `${targetHours}h ${targetMinutes}m`
             : `${targetHours}h`;

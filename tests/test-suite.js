@@ -590,6 +590,41 @@ const TimeCalculatorTests = {
 
             TestRunner.assert.equal(suggestion.targetDateKey, '2026-03-11');
             TestRunner.assert.equal(suggestion.targetDayMinutes, 390);
+            TestRunner.assert.equal(suggestion.remainingDayMinutes, 390);
+            TestRunner.assert.equal(suggestion.exitTime, '15:00');
+        });
+
+        await TestRunner.test('calculateFridayExitSuggestion - scala i minuti gia maturati oggi dal restante da coprire', () => {
+            const weekEntries = {
+                '2026-03-09': [{ type: 'smart', hours: 7.5 }],
+                '2026-03-10': [
+                    { type: 'entrata', time: '08:00' },
+                    { type: 'uscita', time: '17:00' }
+                ],
+                '2026-03-11': [{ type: 'entrata', time: '08:00' }],
+                '2026-03-12': [{ type: 'smart', hours: 7.5 }],
+                '2026-03-13': [{ type: 'assente', hours: 0 }]
+            };
+
+            const suggestion = timeCalculator.calculateFridayExitSuggestion(
+                weekEntries,
+                [
+                    '2026-03-09',
+                    '2026-03-10',
+                    '2026-03-11',
+                    '2026-03-12',
+                    '2026-03-13'
+                ],
+                {
+                    includeOpenSessions: true,
+                    currentTime: '10:00',
+                    todayDateKey: '2026-03-11'
+                }
+            );
+
+            TestRunner.assert.equal(suggestion.targetDateKey, '2026-03-11');
+            TestRunner.assert.equal(suggestion.targetDayMinutes, 390);
+            TestRunner.assert.equal(suggestion.remainingDayMinutes, 300);
             TestRunner.assert.equal(suggestion.exitTime, '15:00');
         });
 

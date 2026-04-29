@@ -683,6 +683,7 @@ export class TimeCalculator {
     *   entryTime: string|null,
     *   recordedExitTime: string|null,
      *   targetDayMinutes: number,
+     *   remainingDayMinutes: number,
      *   targetDateKey: string,
      *   hasEntrata: boolean,
     *   hasUscita: boolean,
@@ -692,7 +693,7 @@ export class TimeCalculator {
      *   isFridayTarget: boolean
      * }|null}
      */
-    calculateFridayExitSuggestion(weekEntries, workDateKeys = []) {
+    calculateFridayExitSuggestion(weekEntries, workDateKeys = [], options = {}) {
         const sortedDates = (workDateKeys.length > 0 ? workDateKeys : Object.keys(weekEntries)).slice().sort();
         if (sortedDates.length === 0) {
             return null;
@@ -731,6 +732,8 @@ export class TimeCalculator {
         }
 
         const targetDayMinutes = Math.max(0, CONFIG.WEEKLY_TARGET_MINUTES - plannedMinutes);
+        const targetDaySummary = this.calculateDaySummaryHours(targetEntries, targetDateKey, options);
+        const remainingDayMinutes = Math.max(0, targetDayMinutes - targetDaySummary.minutes);
         const exitTime = targetDayState.hasOpenSession
             ? this.estimateOpenDayExitTime(targetEntries, targetDateKey, targetDayMinutes)
             : null;
@@ -746,6 +749,7 @@ export class TimeCalculator {
             entryTime,
             recordedExitTime,
             targetDayMinutes,
+            remainingDayMinutes,
             targetDateKey,
             hasEntrata: targetDayState.hasEntrata,
             hasUscita: targetDayState.hasUscita,

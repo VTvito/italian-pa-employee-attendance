@@ -6,7 +6,7 @@
  */
 
 import { parseTimeToMinutes, minutesToTime } from '../utils/Validators.js';
-import { isFriday, parseDateISO } from '../utils/DateUtils.js';
+import { formatDateISO, isFriday, parseDateISO } from '../utils/DateUtils.js';
 
 /**
  * Configurazione ore e pause
@@ -86,6 +86,72 @@ export class TimeCalculator {
             grossMinutes: workedMinutes,
             pauseApplied: requiredPauseMinutes > 0,
             breakMinutes: pairCount > 1 ? breakMinutes : requiredPauseMinutes
+        };
+    }
+
+    /**
+     * Restituisce i minuti dell'orario corrente per stime live deterministiche.
+     * @param {string|number|null} [currentTime=null] - Orario HH:MM o minuti da mezzanotte
+     * @returns {number|null}
+     */
+    resolveCurrentTimeMinutes(currentTime = null) {
+        if (typeof currentTime === 'number' && Number.isFinite(currentTime)) {
+            return Math.max(0, Math.min(1439, Math.floor(currentTime)));
+        }
+
+        if (typeof currentTime === 'string') {
+            return parseTimeToMinutes(currentTime);
+        }
+
+        const now = new Date();
+        return (now.getHours() * 60) + now.getMinutes();
+    }
+
+    /**
+     * Calcola il risultato del giorno usato nei riepiloghi settimanali.
+     * Se la giornata aperta è oggi, include i minuti maturati finora.
+     * @param {Array} entries - Array di entry per il giorno
+     * @param {string} dateKey - Data in formato ISO
+     * @param {{includeOpenSessions?: boolean, currentTime?: string|number|null, todayDateKey?: string}} [options={}]
+     * @returns {{minutes: number, formatted: string, hasIncomplete: boolean}}
+     */
+    calculateDaySummaryHours(entries, dateKey, options = {}) {
+        const dayResult = this.calculateDayHours(entries, dateKey);
+
+        if (!options.includeOpenSessions || !dayResult.hasIncomplete) {
+            return dayResult;
+        }
+
+        const todayDateKey = options.todayDateKey || formatDateISO(new Date());
+        if (dateKey !== todayDateKey) {
+            return dayResult;
+        }
+
+        const state = this.getOpenDayState(entries);
+        if (!state.hasOpenSession || state.openEntryMinutes === null) {
+            return dayResult;
+        }
+
+        const currentTimeMinutes = this.resolveCurrentTimeMinutes(options.currentTime);
+        if (currentTimeMinutes === null || currentTimeMinutes <= state.openEntryMinutes) {
+            return dayResult;
+        }
+
+        const liveMinutes = this.calculateSuggestedPairNetMinutes(
+            state,
+            dateKey,
+            state.openEntryMinutes,
+            currentTimeMinutes
+        );
+
+        if (liveMinutes === null) {
+            return dayResult;
+        }
+
+        return {
+            ...dayResult,
+            minutes: liveMinutes,
+            formatted: minutesToTime(liveMinutes)
         };
     }
 
@@ -194,14 +260,15 @@ export class TimeCalculator {
     /**
      * Calcola il totale settimanale
      * @param {Object} weekEntries - Oggetto {dateKey: [entries]}
+     * @param {{includeOpenSessions?: boolean, currentTime?: string|number|null, todayDateKey?: string}} [options={}]
      * @returns {{minutes: number, formatted: string, byDay: Object}}
      */
-    calculateWeekTotal(weekEntries) {
+    calculateWeekTotal(weekEntries, options = {}) {
         let totalMinutes = 0;
         const byDay = {};
 
         for (const [dateKey, entries] of Object.entries(weekEntries)) {
-            const dayResult = this.calculateDayHours(entries, dateKey);
+            const dayResult = this.calculateDaySummaryHours(entries, dateKey, options);
             byDay[dateKey] = dayResult;
             totalMinutes += dayResult.minutes;
         }
@@ -461,6 +528,7 @@ export class TimeCalculator {
      * I giorni senza registrazioni non contribuiscono al confronto.
      *
      * @param {Object} weekEntries - Oggetto {dateKey: [entries]}
+    * @param {{includeOpenSessions?: boolean, currentTime?: string|number|null, todayDateKey?: string}} [options={}]
      * @returns {{
      *   deltaMinutes: number,
      *   formatted: string,
@@ -472,7 +540,7 @@ export class TimeCalculator {
      *   hasData: boolean
      * }}
      */
-    calculatePaceDelta(weekEntries) {
+    calculatePaceDelta(weekEntries, options = {}) {
         let workedMinutes = 0;
         let expectedMinutes = 0;
         let hasData = false;
@@ -481,7 +549,7 @@ export class TimeCalculator {
             if (!entries || entries.length === 0) continue;
 
             hasData = true;
-            const dayResult = this.calculateDayHours(entries, dateKey);
+            const dayResult = this.calculateDaySummaryHours(entries, dateKey, options);
             const targetMinutes = this.hoursToMinutes(this.getDailyTarget(dateKey));
 
             // I giorni "assente" contano 0 ore lavorate ma 0 ore attese (non penalizzano)

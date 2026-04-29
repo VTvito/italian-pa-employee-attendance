@@ -650,9 +650,10 @@ export class UIManager {
      * @param {Object} weekData - Dati settimana
      */
     updateTotals(weekData) {
-        const weekTotal = timeCalculator.calculateWeekTotal(weekData);
+        const liveSummaryOptions = { includeOpenSessions: true };
+        const weekTotal = timeCalculator.calculateWeekTotal(weekData, liveSummaryOptions);
         const balance = timeCalculator.calculateBalance(weekTotal.minutes);
-        const pace = timeCalculator.calculatePaceDelta(weekData);
+        const pace = timeCalculator.calculatePaceDelta(weekData, liveSummaryOptions);
 
         this.elements.totalHours.textContent = weekTotal.formatted;
 

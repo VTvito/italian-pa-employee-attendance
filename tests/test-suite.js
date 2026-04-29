@@ -521,6 +521,53 @@ const TimeCalculatorTests = {
             TestRunner.assert.equal(result.formatted, '35:35');
         });
 
+        await TestRunner.test('calculateWeekTotal - il riepilogo include la sessione aperta di oggi', () => {
+            const weekEntries = {
+                '2026-02-02': [
+                    { type: 'entrata', time: '08:00' },
+                    { type: 'uscita', time: '16:11' }
+                ],
+                '2026-02-06': [
+                    { type: 'entrata', time: '08:00' }
+                ]
+            };
+
+            const defaultResult = timeCalculator.calculateWeekTotal(weekEntries);
+            const liveResult = timeCalculator.calculateWeekTotal(weekEntries, {
+                includeOpenSessions: true,
+                currentTime: '08:11',
+                todayDateKey: '2026-02-06'
+            });
+
+            TestRunner.assert.equal(defaultResult.minutes, 461);
+            TestRunner.assert.equal(liveResult.minutes, 472);
+            TestRunner.assert.equal(liveResult.formatted, '07:52');
+        });
+
+        await TestRunner.test('calculatePaceDelta - il ritmo mantiene anche i minuti in corso di oggi', () => {
+            const weekEntries = {
+                '2026-02-02': [
+                    { type: 'entrata', time: '08:00' },
+                    { type: 'uscita', time: '16:11' }
+                ],
+                '2026-02-06': [
+                    { type: 'entrata', time: '08:00' }
+                ]
+            };
+
+            const defaultPace = timeCalculator.calculatePaceDelta(weekEntries);
+            const livePace = timeCalculator.calculatePaceDelta(weekEntries, {
+                includeOpenSessions: true,
+                currentTime: '08:11',
+                todayDateKey: '2026-02-06'
+            });
+
+            TestRunner.assert.equal(defaultPace.deltaMinutes, -349);
+            TestRunner.assert.equal(defaultPace.formatted, '-5h 49m');
+            TestRunner.assert.equal(livePace.deltaMinutes, -338);
+            TestRunner.assert.equal(livePace.formatted, '-5h 38m');
+        });
+
         await TestRunner.test('calculateFridayExitSuggestion - usa l ultimo giorno utile in sede', () => {
             const weekEntries = {
                 '2026-03-09': [{ type: 'smart', hours: 7.5 }],
@@ -598,6 +645,23 @@ const TimeCalculatorTests = {
             TestRunner.assert.equal(suggestion.recordedExitTime, '15:00');
             TestRunner.assert.equal(suggestion.entryTime, '08:00');
             TestRunner.assert.equal(suggestion.exitTime, null);
+        });
+
+        await TestRunner.test('calculateWeekTotal - non proietta sessioni aperte su giorni che non sono oggi', () => {
+            const weekEntries = {
+                '2026-02-06': [
+                    { type: 'entrata', time: '08:00' }
+                ]
+            };
+
+            const result = timeCalculator.calculateWeekTotal(weekEntries, {
+                includeOpenSessions: true,
+                currentTime: '08:11',
+                todayDateKey: '2026-02-05'
+            });
+
+            TestRunner.assert.equal(result.minutes, 0);
+            TestRunner.assert.equal(result.formatted, '00:00');
         });
     }
 };

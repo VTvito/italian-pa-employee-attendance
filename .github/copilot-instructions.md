@@ -56,9 +56,9 @@ js/
 - Settimana lavorativa: **36 ore** (Lun–Ven)
 - Target giornaliero Lun–Gio: **7h 30m** — Venerdì: **6h**
 - Pausa pranzo automatica:
-  - Lun–Gio: **30 minuti fissi** con coppia singola; con multi-timbrature vale la pausa reale e si integra solo l'eventuale differenza fino a 30 minuti
+  - Lun–Gio: **30 minuti fissi** con coppia singola; con multi-timbrature i 30 minuti non si deducono solo se una singola pausa copre almeno 30 minuti nella fascia **12:00-15:00**
   - Venerdì: nessuna pausa automatica; con multi-timbrature conta solo la pausa reale registrata con uscita+rientro
-  - Le multi-timbrature evitano deduzioni doppie se il break reale è già sufficiente
+  - Una pausa extra fuori fascia pranzo non sostituisce i 30 minuti automatici
 - Smart Working / Assente: sostituiscono l'intera giornata con ore fisse
 - Venerdì: l'app suggerisce l'ora di uscita anticipata calcolando gli extra Lun–Gio
 - **Summary panel settimanale**: label contestuale (`Da completare` / `Obiettivo ✅ Raggiunto` / `Ore extra`) + riga `Sul ritmo` con delta lavorato vs atteso per i soli giorni con registrazioni (`calculatePaceDelta`)
@@ -113,7 +113,7 @@ git push origin main
 2. **skipWaiting**: NON va nel handler `install` — solo nel handler `message` su richiesta utente
 3. **iOS PWA**: l'icona e il nome vengono cachati all'installazione. Per aggiornarli l'utente deve rimuovere e reinstallare l'app
 4. **localStorage quota**: ~5MB. Comprimere dati se si cresce. Attualmente ~2KB per mese
-5. **Calcoli pause**: con coppia singola Lun–Gio la pausa è sempre 30min; con multi-timbrature deduci solo l'eventuale quota mancante ai 30min. Venerdì nessuna pausa automatica: conta solo l'eventuale pausa reale registrata
+5. **Calcoli pause**: con coppia singola Lun–Gio la pausa è sempre 30min; con multi-timbrature salta solo se almeno 30 minuti della stessa pausa ricadono tra le 12:00 e le 15:00. Venerdì nessuna pausa automatica: conta solo l'eventuale pausa reale registrata
 6. **Update PWA**: HTML, JS, CSS e manifest devono preferire la rete per evitare mix tra codice nuovo e vecchio; il SW non deve mai toccare localStorage o IndexedDB
 7. **parseDateISO**: usa `new Date(year, month-1, day)` (locale), non `new Date(str)` (UTC mismatch)
 8. **git push fallisce**: fare sempre `git pull --rebase origin main` e riprovare

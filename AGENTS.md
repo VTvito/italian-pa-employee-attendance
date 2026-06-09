@@ -26,7 +26,7 @@ PWA offline-first per dipendenti pubblici italiani. Zero back-end, Vanilla JS ES
 ## Regole business
 
 - 36h/settimana: Lun–Gio 7h30m + Venerdì 6h
-- Pausa automatica 30min solo Lun–Gio (coppia singola); multi-coppie → pausa reale
+- Pausa automatica 30min solo Lun–Gio (coppia singola); multi-coppie senza deduzione solo se una pausa copre almeno 30min tra le 12 e le 15
 - Summary panel: "Da completare" / "Obiettivo ✅ Raggiunto" / "Ore extra" + "Sul ritmo" (pace delta)
 
 > Trust these instructions. Only explore the codebase if information here is incomplete or incorrect.

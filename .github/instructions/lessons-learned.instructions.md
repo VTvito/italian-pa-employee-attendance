@@ -51,9 +51,9 @@ Questo documento raccoglie le lezioni apprese durante lo sviluppo agentico dell'
 ## 3. Calcoli Orari & Pause
 
 ### Problema: Regola pausa pranzo aziendale diversa da quella inizialmente modellata
-- **Causa**: La logica era stata semplificata troppo, deducendo 30 minuti anche quando la pausa reale era già stata registrata con multi-timbrature.
-- **Soluzione**: Con coppia singola da lunedì a giovedì dedurre sempre 30 minuti se esiste lavoro registrato. Con multi-timbrature usare la pausa reale e dedurre solo l'eventuale differenza per arrivare a 30 minuti minimi. Il venerdì non applicare alcuna pausa automatica.
-- **Regola**: Le multi-timbrature contano come pausa reale; non dedurre altri 30 minuti se il break totale è già almeno di 30 minuti. Il venerdì conta solo la pausa realmente registrata con uscita+rientro; nessuna deduzione automatica. `isFriday(parseDateISO(dateKey))` continua a distinguere target giornaliero e regola pausa del venerdì.
+- **Causa**: La logica considerava qualsiasi uscita+rientro lunga almeno 30 minuti come pausa pranzo valida, anche fuori fascia pranzo.
+- **Soluzione**: Con coppia singola da lunedì a giovedì dedurre sempre 30 minuti se esiste lavoro registrato. Con multi-timbrature non dedurre i 30 minuti solo se una singola pausa copre almeno 30 minuti nella fascia 12:00-15:00. Una pausa fuori fascia non sostituisce la pausa pranzo automatica. Il venerdì non applicare alcuna pausa automatica.
+- **Regola**: Lun–Gio: la pausa pranzo automatica salta solo con una pausa di almeno 30 minuti in fascia 12:00-15:00; altrimenti i 30 minuti si deducono comunque. Il venerdì conta solo la pausa realmente registrata con uscita+rientro; nessuna deduzione automatica. `isFriday(parseDateISO(dateKey))` continua a distinguere target giornaliero e regola pausa del venerdì.
 
 ### Problema: Date UTC vs Local
 - **Causa**: `new Date('2026-02-24')` crea una data UTC (mezzanotte UTC, che in IT è 23:00 del giorno prima in inverno).

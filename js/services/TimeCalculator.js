@@ -18,7 +18,9 @@ export const CONFIG = {
     SMART_HOURS_DEFAULT: 7.5,          // Ore Smart lun-gio
     SMART_HOURS_FRIDAY: 6,             // Ore Smart venerdì
     DAILY_TARGET_HOURS: 7.5,           // Ore giornaliere target lun-gio (7h30m)
-    FRIDAY_TARGET_HOURS: 6             // Ore target venerdì
+    FRIDAY_TARGET_HOURS: 6,            // Ore target venerdì
+    LUNCH_BREAK_START_MINUTES: 12 * 60,
+    LUNCH_BREAK_END_MINUTES: 15 * 60
     // Verifica: 7.5 * 4 + 6 = 36h ✓
 };
 
@@ -74,9 +76,21 @@ export class TimeCalculator {
         }
 
         // Calcola ore da coppie entrata/uscita
-        const { workedMinutes, hasIncomplete, pairCount, breakMinutes } = this.calculatePairMinutes(entries);
+        const {
+            workedMinutes,
+            hasIncomplete,
+            pairCount,
+            breakMinutes,
+            lunchBreakOverlapMinutes
+        } = this.calculatePairMinutes(entries);
 
-        const requiredPauseMinutes = this.getRequiredPauseMinutes(workedMinutes, dateKey, pairCount, breakMinutes);
+        const requiredPauseMinutes = this.getRequiredPauseMinutes(
+            workedMinutes,
+            dateKey,
+            pairCount,
+            breakMinutes,
+            lunchBreakOverlapMinutes
+        );
         const netMinutes = Math.max(0, workedMinutes - requiredPauseMinutes);
 
         return {
@@ -158,12 +172,13 @@ export class TimeCalculator {
     /**
      * Calcola i minuti da coppie entrata/uscita
      * @param {Array} entries - Array di entry
-     * @returns {{workedMinutes: number, hasIncomplete: boolean, pairCount: number}}
+      * @returns {{workedMinutes: number, hasIncomplete: boolean, pairCount: number, breakMinutes: number, lunchBreakOverlapMinutes: number}}
      */
     calculatePairMinutes(entries) {
         let workedMinutes = 0;
         let hasIncomplete = false;
         let breakMinutes = 0;
+          let lunchBreakOverlapMinutes = 0;
 
         // Separa entrate e uscite
         const entrate = entries.filter(e => e.type === 'entrata').map(e => e.time);
@@ -193,11 +208,41 @@ export class TimeCalculator {
                 const nextEntryMin = parseTimeToMinutes(entrate[i + 1]);
                 if (exitMin !== null && nextEntryMin !== null && nextEntryMin > exitMin) {
                     breakMinutes += (nextEntryMin - exitMin);
+                    lunchBreakOverlapMinutes = Math.max(
+                        lunchBreakOverlapMinutes,
+                        this.getLunchBreakOverlapMinutes(exitMin, nextEntryMin)
+                    );
                 }
             }
         }
 
-        return { workedMinutes, hasIncomplete, pairCount: pairs, breakMinutes };
+        return {
+            workedMinutes,
+            hasIncomplete,
+            pairCount: pairs,
+            breakMinutes,
+            lunchBreakOverlapMinutes
+        };
+    }
+
+    /**
+     * Calcola quanti minuti di una pausa ricadono nella fascia pranzo 12:00-15:00
+     * @param {number|null} breakStartMinutes - Inizio pausa in minuti
+     * @param {number|null} breakEndMinutes - Fine pausa in minuti
+     * @returns {number}
+     */
+    getLunchBreakOverlapMinutes(breakStartMinutes, breakEndMinutes) {
+        if (
+            breakStartMinutes === null
+            || breakEndMinutes === null
+            || breakEndMinutes <= breakStartMinutes
+        ) {
+            return 0;
+        }
+
+        const overlapStart = Math.max(breakStartMinutes, CONFIG.LUNCH_BREAK_START_MINUTES);
+        const overlapEnd = Math.min(breakEndMinutes, CONFIG.LUNCH_BREAK_END_MINUTES);
+        return Math.max(0, overlapEnd - overlapStart);
     }
 
     /**
@@ -206,9 +251,16 @@ export class TimeCalculator {
      * @param {string} dateKey - Data in formato ISO
      * @param {number} pairCount - Numero di coppie entrata/uscita complete
      * @param {number} breakMinutes - Minuti di pausa reale tra coppie
+     * @param {number} lunchBreakOverlapMinutes - Minuti di pausa reale nella fascia pranzo 12:00-15:00
      * @returns {number}
      */
-    getRequiredPauseMinutes(workedMinutes, dateKey, pairCount = 1, breakMinutes = 0) {
+    getRequiredPauseMinutes(
+        workedMinutes,
+        dateKey,
+        pairCount = 1,
+        breakMinutes = 0,
+        lunchBreakOverlapMinutes = 0
+    ) {
         if (workedMinutes <= 0) {
             return 0;
         }
@@ -222,7 +274,11 @@ export class TimeCalculator {
             return minimumPauseMinutes;
         }
 
-        return Math.max(0, minimumPauseMinutes - breakMinutes);
+        if (lunchBreakOverlapMinutes >= minimumPauseMinutes) {
+            return 0;
+        }
+
+        return minimumPauseMinutes;
     }
 
     /**
@@ -452,6 +508,7 @@ export class TimeCalculator {
      *   breakMinutes: number,
      *   completePairCount: number,
      *   finalPairCount: number,
+    *   lunchBreakOverlapMinutes: number,
      *   openEntryMinutes: number|null,
      *   unpairedExitMinutes: number|null,
      *   lastPairedExitMinutes: number|null
@@ -464,6 +521,7 @@ export class TimeCalculator {
         const completePairs = Math.min(entrate.length, uscite.length);
         let completedWorkedMinutes = 0;
         let breakMinutes = 0;
+        let lunchBreakOverlapMinutes = 0;
 
         for (let index = 0; index < completePairs; index++) {
             const entrataMinutes = parseTimeToMinutes(entrate[index]);
@@ -478,6 +536,10 @@ export class TimeCalculator {
                 const nextEntryMinutes = parseTimeToMinutes(entrate[index + 1]);
                 if (exitMinutes !== null && nextEntryMinutes !== null && nextEntryMinutes > exitMinutes) {
                     breakMinutes += nextEntryMinutes - exitMinutes;
+                    lunchBreakOverlapMinutes = Math.max(
+                        lunchBreakOverlapMinutes,
+                        this.getLunchBreakOverlapMinutes(exitMinutes, nextEntryMinutes)
+                    );
                 }
             }
         }
@@ -503,6 +565,10 @@ export class TimeCalculator {
                 && openEntryMinutes > lastPairedExitMinutes
             ) {
                 breakMinutes += openEntryMinutes - lastPairedExitMinutes;
+                lunchBreakOverlapMinutes = Math.max(
+                    lunchBreakOverlapMinutes,
+                    this.getLunchBreakOverlapMinutes(lastPairedExitMinutes, openEntryMinutes)
+                );
             }
         }
 
@@ -516,6 +582,7 @@ export class TimeCalculator {
             breakMinutes,
             completePairCount: completePairs,
             finalPairCount: completePairs + ((hasOpenSession || hasUnpairedExit) ? 1 : 0),
+            lunchBreakOverlapMinutes,
             openEntryMinutes,
             unpairedExitMinutes,
             lastPairedExitMinutes
@@ -606,13 +673,21 @@ export class TimeCalculator {
         const extraBreakMinutes = state.hasUnpairedExit && state.lastPairedExitMinutes !== null
             ? Math.max(0, entryMinutes - state.lastPairedExitMinutes)
             : 0;
+        const extraLunchBreakOverlapMinutes = state.hasUnpairedExit && state.lastPairedExitMinutes !== null
+            ? this.getLunchBreakOverlapMinutes(state.lastPairedExitMinutes, entryMinutes)
+            : 0;
         const totalWorkedMinutes = state.completedWorkedMinutes + pairWorkedMinutes;
         const totalBreakMinutes = state.breakMinutes + extraBreakMinutes;
+        const totalLunchBreakOverlapMinutes = Math.max(
+            state.lunchBreakOverlapMinutes,
+            extraLunchBreakOverlapMinutes
+        );
         const requiredPauseMinutes = this.getRequiredPauseMinutes(
             totalWorkedMinutes,
             dateKey,
             state.finalPairCount,
-            totalBreakMinutes
+            totalBreakMinutes,
+            totalLunchBreakOverlapMinutes
         );
 
         return Math.max(0, totalWorkedMinutes - requiredPauseMinutes);

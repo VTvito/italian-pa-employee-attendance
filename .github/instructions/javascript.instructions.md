@@ -45,9 +45,9 @@ Lo storage passa SEMPRE da `StorageManager`. Mai chiamare `localStorage` o `inde
 1. Entry speciali (smart/assente): converte `hours` in minuti
 2. Entry normali: calcola coppie entrata/uscita, somma i minuti
 3. Pausa automatica:
-   - Lun–Gio: con coppia singola deduce 30min; con multi-timbrature usa la pausa reale e integra solo la quota mancante fino a 30min
+   - Lun–Gio: con coppia singola deduce 30min; con multi-timbrature i 30min saltano solo se una singola pausa copre almeno 30min nella fascia 12:00-15:00
    - Venerdì: nessuna pausa automatica. Con multi-timbrature conta solo la pausa reale registrata con uscita+rientro
-   - Le multi-timbrature evitano deduzioni doppie quando la pausa reale è già sufficiente
+   - Una pausa extra fuori fascia pranzo non sostituisce i 30min automatici
 4. `isFriday()` determina sia il target giornaliero sia la regola pausa del venerdì
 
 ## Validazione Pre-Commit

@@ -13,7 +13,7 @@ Funziona offline, si installa come app e salva i dati solo sul dispositivo.
 
 - 36 ore settimanali con saldo aggiornato in tempo reale
 - Footer settimanale con totale/da completare aggiornati in tempo reale; "Sul ritmo" come saldo cumulato dei soli giorni chiusi fino a oggi
-- Pausa pranzo automatica: con coppia singola lun-gio 30 minuti fissi, con multi-timbrature conta la pausa reale; venerdì nessuna pausa automatica, anche oltre 6h
+- Pausa pranzo automatica: con coppia singola lun-gio 30 minuti fissi; con multi-timbrature i 30 minuti non si scalano solo se una pausa copre almeno 30 minuti tra le 12 e le 15; venerdì nessuna pausa automatica, anche oltre 6h
 - Smart working e assenze con ore precompilate
 - Timbrature multiple nello stesso giorno, con aggiunta manuale guidata dalla card del giorno
 - Suggerimento ingresso/uscita sull'ultimo giorno utile in sede, considerando smart e assenze gia pianificati

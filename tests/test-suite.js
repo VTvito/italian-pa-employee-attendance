@@ -378,7 +378,7 @@ const TimeCalculatorTests = {
             TestRunner.assert.equal(result.breakMinutes, 30);
         });
 
-        await TestRunner.test('calculateDayHours - multi-coppia lunedì non deduce extra se la pausa reale supera 30 minuti', () => {
+        await TestRunner.test('calculateDayHours - multi-coppia lunedì non deduce extra se una pausa pranzo copre almeno 30 minuti', () => {
             const entries = [
                 { type: 'entrata', time: '08:00' },
                 { type: 'uscita', time: '12:00' },
@@ -386,12 +386,12 @@ const TimeCalculatorTests = {
                 { type: 'uscita', time: '14:15' }
             ];
             const result = timeCalculator.calculateDayHours(entries, '2026-02-02'); // Lunedì
-            // 5h15m nette già al netto di 1h di pausa reale -> nessuna deduzione aggiuntiva
+            // 5h15m nette già al netto di 1h di pausa tra le 12 e le 15 -> nessuna deduzione aggiuntiva
             TestRunner.assert.equal(result.minutes, 315);
             TestRunner.assert.equal(result.breakMinutes, 60);
         });
 
-        await TestRunner.test('calculateDayHours - multi-coppia lunedì integra solo la pausa reale mancante', () => {
+        await TestRunner.test('calculateDayHours - multi-coppia lunedì scala comunque 30 minuti fuori fascia pranzo', () => {
             const entries = [
                 { type: 'entrata', time: '08:00' },
                 { type: 'uscita', time: '12:00' },
@@ -399,9 +399,26 @@ const TimeCalculatorTests = {
                 { type: 'uscita', time: '14:10' }
             ];
             const result = timeCalculator.calculateDayHours(entries, '2026-02-02'); // Lunedì
-            // 6h nette con 10m di pausa reale -> integrazione 20m -> 5h40m finali
-            TestRunner.assert.equal(result.minutes, 340);
+            // 6h lorde con solo 10m in fascia pranzo -> scala comunque 30m -> 5h30m finali
+            TestRunner.assert.equal(result.minutes, 330);
             TestRunner.assert.equal(result.breakMinutes, 10);
+        });
+
+        await TestRunner.test('calculateDaySummaryHours - giornata aperta scala 30 minuti se la pausa extra è fuori fascia pranzo', () => {
+            const entries = [
+                { type: 'entrata', time: '08:55' },
+                { type: 'uscita', time: '10:08' },
+                { type: 'entrata', time: '10:50' }
+            ];
+
+            const result = timeCalculator.calculateDaySummaryHours(entries, '2026-06-09', {
+                includeOpenSessions: true,
+                currentTime: '15:10',
+                todayDateKey: '2026-06-09'
+            });
+
+            TestRunner.assert.equal(result.minutes, 303);
+            TestRunner.assert.equal(result.formatted, '05:03');
         });
 
         await TestRunner.test('calculateDayHours - venerdì non applica pause automatiche oltre 6h', () => {
@@ -491,7 +508,8 @@ const TimeCalculatorTests = {
 
         await TestRunner.test('getRequiredPauseMinutes - differenzia coppia singola e multi-coppia', () => {
             TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(300, '2026-02-02', 1, 0), 30);
-            TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(315, '2026-02-02', 2, 60), 0);
+            TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(315, '2026-02-02', 2, 60, 60), 0);
+            TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(333, '2026-02-02', 2, 42, 0), 30);
             TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(360, '2026-02-06', 1, 0), 0);
             TestRunner.assert.equal(timeCalculator.getRequiredPauseMinutes(375, '2026-02-06', 1, 0), 0);
         });

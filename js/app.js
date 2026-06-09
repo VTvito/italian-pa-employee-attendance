@@ -14,12 +14,105 @@ let app = null;
 // Timestamp dell'ultimo controllo aggiornamenti SW (evita chiamate eccessive offline)
 let lastUpdateCheckTime = 0;
 const UPDATE_CHECK_MIN_INTERVAL_MS = 10 * 60 * 1000; // min 10 minuti tra un check e l'altro
+const PENDING_UPDATE_RELOAD_KEY = 'timbraPaPendingUpdateReload';
+
+let isReloadingForUpdate = false;
+
+/**
+ * Legge l'eventuale reload differito richiesto da un aggiornamento SW.
+ * @returns {{reason: string, version?: string|null, requestedAt: number}|null}
+ */
+function getPendingUpdateReload() {
+    try {
+        const raw = sessionStorage.getItem(PENDING_UPDATE_RELOAD_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+        console.warn('[App] Impossibile leggere il reload update pendente:', error);
+        return null;
+    }
+}
+
+/**
+ * Salva un reload differito da eseguire quando la PWA torna davvero visibile.
+ * @param {string} reason
+ * @param {{version?: string|null}} [options={}]
+ */
+function setPendingUpdateReload(reason, options = {}) {
+    try {
+        sessionStorage.setItem(PENDING_UPDATE_RELOAD_KEY, JSON.stringify({
+            reason,
+            version: options.version || null,
+            requestedAt: Date.now()
+        }));
+    } catch (error) {
+        console.warn('[App] Impossibile salvare il reload update pendente:', error);
+    }
+}
+
+/**
+ * Pulisce l'eventuale reload differito dopo un bootstrap riuscito.
+ */
+function clearPendingUpdateReload() {
+    try {
+        sessionStorage.removeItem(PENDING_UPDATE_RELOAD_KEY);
+    } catch (error) {
+        console.warn('[App] Impossibile pulire il reload update pendente:', error);
+    }
+}
+
+/**
+ * Richiede un reload immediato se la PWA e' visibile, altrimenti lo differisce.
+ * @param {string} reason
+ * @param {{version?: string|null}} [options={}]
+ * @returns {boolean}
+ */
+function requestUpdateReload(reason, options = {}) {
+    setPendingUpdateReload(reason, options);
+
+    if (document.visibilityState !== 'visible') {
+        console.log(`[App] Reload update differito (${reason}) finche la PWA non torna visibile`);
+        return false;
+    }
+
+    if (isReloadingForUpdate) {
+        return true;
+    }
+
+    isReloadingForUpdate = true;
+    console.log(`[App] Reload applicazione per update (${reason})`);
+    window.location.reload();
+    return true;
+}
+
+/**
+ * Se esiste un update gia attivato ma il reload non e' partito mentre l'app era
+ * in background, lo riprende quando la PWA torna in foreground.
+ * @param {string} trigger
+ * @returns {boolean}
+ */
+function flushPendingUpdateReload(trigger) {
+    const pendingReload = getPendingUpdateReload();
+    if (!pendingReload || document.visibilityState !== 'visible') {
+        return false;
+    }
+
+    if (isReloadingForUpdate) {
+        return true;
+    }
+
+    console.log(`[App] Riprendo reload update pendente (${pendingReload.reason}) su ${trigger}`);
+    isReloadingForUpdate = true;
+    window.location.reload();
+    return true;
+}
 
 /**
  * Inizializza l'applicazione
  */
 async function initApp() {
     console.log('🕐 Orari Lavoro - Inizializzazione...');
+    clearPendingUpdateReload();
+    isReloadingForUpdate = false;
 
     try {
         // Crea e inizializza il controller
@@ -96,6 +189,10 @@ async function registerServiceWorker() {
         const registration = await navigator.serviceWorker.register(swPath);
         console.log('Service Worker registrato:', registration.scope);
 
+        const resumeDeferredReload = (trigger) => {
+            flushPendingUpdateReload(trigger);
+        };
+
         // Rileva un nuovo SW appena installato
         registration.addEventListener('updatefound', () => {
             const newWorker = registration.installing;
@@ -122,6 +219,7 @@ async function registerServiceWorker() {
         // e se è passato abbastanza tempo dall'ultimo check (evita flood su rete scarsa)
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible' && navigator.onLine) {
+                resumeDeferredReload('visibilitychange');
                 const now = Date.now();
                 if (now - lastUpdateCheckTime >= UPDATE_CHECK_MIN_INTERVAL_MS) {
                     checkForUpdates(registration);
@@ -129,10 +227,32 @@ async function registerServiceWorker() {
             }
         });
 
+        window.addEventListener('focus', () => {
+            resumeDeferredReload('focus');
+        });
+
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted || document.visibilityState === 'visible') {
+                resumeDeferredReload(event.persisted ? 'pageshow-bfcache' : 'pageshow');
+            }
+        });
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!getPendingUpdateReload()) {
+                return;
+            }
+
+            console.log('[App] controllerchange ricevuto');
+            verifyDataIntegrity();
+            requestUpdateReload('controllerchange');
+        });
+
         // Ascolta messaggi dal SW (es. SW_ACTIVATED dopo aggiornamento)
         navigator.serviceWorker.addEventListener('message', (event) => {
             if (event.data?.type === 'SW_ACTIVATED') {
                 console.log(`[App] SW attivato: v${event.data.version}`);
+                verifyDataIntegrity();
+                requestUpdateReload('sw-activated', { version: event.data.version });
             }
         });
 
@@ -197,6 +317,8 @@ function showUpdateNotification(registration) {
                 console.warn('[App] Integrità dati dubbia — procedo comunque (dati in localStorage persistono)');
             }
 
+            setPendingUpdateReload('update-confirmed');
+
             // 2. Registra listener per quando il nuovo SW prende il controllo
             const controllerChanged = new Promise((resolve) => {
                 navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
@@ -224,12 +346,12 @@ function showUpdateNotification(registration) {
             // 5. Verifica dati di nuovo dopo l'attivazione
             verifyDataIntegrity();
 
-            // 6. Reload pulito
-            window.location.reload();
+            // 6. Reload pulito, oppure differito al rientro in foreground su iOS
+            requestUpdateReload('update-flow-complete');
 
         } catch (e) {
             console.error('[App] Errore aggiornamento:', e);
-            window.location.reload();
+            requestUpdateReload('update-flow-error');
         }
     });
 

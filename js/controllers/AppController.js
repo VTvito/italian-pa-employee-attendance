@@ -688,10 +688,16 @@ export class AppController {
      * Controlla dati vecchi da pulire
      */
     async checkOldData() {
+        const shouldPrompt = await this.storage.shouldPromptOldDataCleanup();
+        if (!shouldPrompt) {
+            return;
+        }
+
         const oldWeeks = await this.storage.findOldWeeks(3);
         
         if (oldWeeks.length > 0) {
             const result = await modalManager.openCleanDataModal(oldWeeks);
+            await this.storage.markOldDataCleanupPromptHandled();
             
             if (result?.action === 'clean') {
                 // Poi pulisci

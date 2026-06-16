@@ -12,6 +12,7 @@ import { parseWeekKey, getWeekStartDate } from '../utils/DateUtils.js';
 
 const OLD_DATA_CHECK_DAYS = 30;   // Controllo dati vecchi ogni N giorni
 const OLD_DATA_THRESHOLD_MONTHS = 3; // Soglia per dati "vecchi"
+const OLD_DATA_LAST_PROMPT_KEY = 'workTimeOldDataLastPromptAt';
 
 export class StorageManager {
     constructor() {
@@ -214,23 +215,62 @@ export class StorageManager {
     }
 
     /**
+     * Verifica se è il momento di riproporre la pulizia dati vecchi
+     * @returns {Promise<boolean>}
+     */
+    async shouldPromptOldDataCleanup() {
+        const lastPromptValue = await this.localStorage.getMetaValue(OLD_DATA_LAST_PROMPT_KEY);
+        if (!lastPromptValue) {
+            return true;
+        }
+
+        const lastPromptAt = parseInt(lastPromptValue, 10);
+        if (Number.isNaN(lastPromptAt)) {
+            return true;
+        }
+
+        const elapsedMs = Date.now() - lastPromptAt;
+        const thresholdMs = OLD_DATA_CHECK_DAYS * 24 * 60 * 60 * 1000;
+        return elapsedMs >= thresholdMs;
+    }
+
+    /**
+     * Registra quando il prompt di pulizia è stato gestito o rinviato
+     * @returns {Promise<boolean>}
+     */
+    async markOldDataCleanupPromptHandled() {
+        return this.localStorage.setMetaValue(OLD_DATA_LAST_PROMPT_KEY, String(Date.now()));
+    }
+
+    /**
      * Trova settimane più vecchie di N mesi
      * @param {number} months - Numero di mesi
      * @returns {Promise<string[]>} Chiavi delle settimane vecchie
      */
     async findOldWeeks(months = OLD_DATA_THRESHOLD_MONTHS) {
         const weekKeys = await this.getWeekKeys();
-        const cutoffDate = new Date();
-        cutoffDate.setMonth(cutoffDate.getMonth() - months);
-
         const oldWeeks = [];
+        const now = new Date();
         
         for (const weekKey of weekKeys) {
             try {
                 const { year, week } = parseWeekKey(weekKey);
-                // Usa il lunedì ISO della settimana come data di riferimento
                 const weekStartDate = getWeekStartDate(year, week);
-                if (weekStartDate < cutoffDate) {
+                const weekEndDate = new Date(
+                    weekStartDate.getFullYear(),
+                    weekStartDate.getMonth(),
+                    weekStartDate.getDate() + 6
+                );
+
+                // Valuta l'età per mese di calendario, così la pulizia avanza
+                // per blocchi coerenti con i dati settimanali e non una sola
+                // settimana alla volta mentre la soglia scorre giorno per giorno.
+                const monthAge = (
+                    (now.getFullYear() - weekEndDate.getFullYear()) * 12
+                    + (now.getMonth() - weekEndDate.getMonth())
+                );
+
+                if (monthAge >= months) {
                     oldWeeks.push(weekKey);
                 }
             } catch (e) {

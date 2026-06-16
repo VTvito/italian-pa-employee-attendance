@@ -206,6 +206,38 @@ export class LocalStorageAdapter {
     }
 
     /**
+     * Legge un metadato generico da localStorage
+     * @param {string} key - Chiave metadata
+     * @returns {Promise<string|null>}
+     */
+    async getMetaValue(key) {
+        if (!this.isAvailable) return null;
+
+        try {
+            return localStorage.getItem(key);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /**
+     * Salva un metadato generico su localStorage
+     * @param {string} key - Chiave metadata
+     * @param {string} value - Valore da salvare
+     * @returns {Promise<boolean>}
+     */
+    async setMetaValue(key, value) {
+        if (!this.isAvailable) return false;
+
+        try {
+            localStorage.setItem(key, value);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    /**
      * Ottiene lo spazio utilizzato in bytes
      * @returns {number}
      */

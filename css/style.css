@@ -1458,6 +1458,15 @@ body {
     line-height: 1.4;
 }
 
+.ios-note-icon {
+    flex-shrink: 0;
+}
+
+.ios-note-text {
+    flex: 1;
+    min-width: 0;
+}
+
 /* App Footer */
 .app-footer {
     text-align: center;
